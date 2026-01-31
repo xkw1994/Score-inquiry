@@ -3,155 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>凯文的✨ 魔法成绩屋 ✨</title>
+    <title>✨ 魔法成绩屋 ✨</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
-        /* 这里是让界面变可爱的魔法 CSS */
-        body {
-            background-image: linear-gradient(120deg, #fccb90 0%, #d57eeb 100%);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: "Microsoft YaHei", "Heiti SC", sans-serif;
-            margin: 0;
-        }
+        /* --- 样式区 --- */
+        body { background-image: linear-gradient(120deg, #fccb90 0%, #d57eeb 100%); height: 100vh; display: flex; justify-content: center; align-items: center; font-family: "Microsoft YaHei", sans-serif; margin: 0; }
+        .card { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 320px; border: 4px solid #fff; }
+        h1 { color: #ff6b81; font-size: 24px; margin-bottom: 5px; }
+        p.subtitle { color: #a4b0be; font-size: 14px; margin-bottom: 25px; }
+        .input-group { margin-bottom: 15px; }
+        input { width: 85%; padding: 12px; border: 2px solid #ffcccc; border-radius: 15px; outline: none; font-size: 16px; text-align: center; color: #555; background: #fffafa; }
+        input:focus { border-color: #ff6b81; background: #fff; }
+        button { width: 90%; margin-top: 10px; background: linear-gradient(to right, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); border: none; padding: 12px 0; border-radius: 50px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; transition: all 0.2s; }
+        button:active { transform: scale(0.95); }
+        button:disabled { background: #dcdde1; cursor: not-allowed; }
+        .result-area { margin-top: 25px; padding: 20px; border-radius: 15px; display: none; }
+        .student-name { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #333; }
+        .scores { line-height: 1.8; font-size: 16px; color: #555; } /* 稍微调大了行高，让三门课排版更好看 */
+        .footer-credit { margin-top: 25px; font-size: 12px; color: #dfe6e9; letter-spacing: 1px; }
 
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
-            border-radius: 30px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            text-align: center;
-            width: 320px;
-            border: 4px solid #fff;
-        }
-
-        h1 {
-            color: #ff6b81;
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        p.subtitle {
-            color: #a4b0be;
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        input {
-            width: 80%;
-            padding: 15px;
-            border: 2px solid #ffcccc;
-            border-radius: 50px;
-            outline: none;
-            font-size: 16px;
-            text-align: center;
-            color: #555;
-            transition: 0.3s;
-        }
-
-        input:focus {
-            border-color: #ff6b81;
-            box-shadow: 0 0 8px rgba(255, 107, 129, 0.3);
-        }
-
-        button {
-            background: linear-gradient(to right, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
-            border: none;
-            padding: 12px 40px;
-            border-radius: 50px;
-            color: white;
-            font-weight: bold;
-            font-size: 16px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4);
-            transition: transform 0.2s;
-        }
-
-        button:active {
-            transform: scale(0.95);
-        }
-
-        .result-area {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px dashed #ffeaa7;
-            display: none; /* 默认隐藏 */
-        }
-
-        .student-name {
-            font-size: 20px;
-            color: #2f3542;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .scores {
-            background: #fff0f6;
-            padding: 15px;
-            border-radius: 15px;
-            color: #ff6b81;
-            line-height: 1.6;
-            font-size: 15px;
-        }
+        /* 动画样式 */
+        @keyframes jelly { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+        .rank-s { background: #fff5e6; border: 2px solid #ffd700; animation: jelly 0.8s ease-out forwards; } .rank-s::after { content: " 🏆"; }
+        .rank-a { background: #e3f2fd; border: 2px solid #90caf9; animation: jelly 0.6s ease-out forwards; } .rank-a::after { content: " 🌟"; }
+        .rank-b { background: #f3e5f5; border: 2px solid #ce93d8; animation: jelly 0.6s ease-out forwards; } .rank-b::after { content: " 🙂"; }
+        .rank-c { background: #ffebee; border: 2px solid #ef9a9a; animation: jelly 0.6s ease-out forwards; } .rank-c::after { content: " 💪"; }
     </style>
 </head>
 <body>
-
     <div class="card">
         <h1>🐰 期末成绩查询</h1>
-        <p class="subtitle">请输入手机号召唤成绩单</p>
-
-        <div class="input-group">
-            <input type="text" id="phoneInput" placeholder="在此输入手机号..." maxlength="11">
-        </div>
-
-        <button onclick="checkGrade()">✨ 查询 ✨</button>
-
+        <p class="subtitle">请输入姓名和生日召唤成绩单</p>
+        <div class="input-group"><input type="text" id="nameInput" placeholder="请输入姓名"></div>
+        <div class="input-group"><input type="tel" id="birthInput" placeholder="请输入4位生日 (如: 0101)" maxlength="4"></div>
+        <button id="searchBtn" onclick="checkGrade()">✨ 查询 ✨</button>
         <div id="result" class="result-area">
             <div id="nameDisplay" class="student-name"></div>
             <div id="scoreDisplay" class="scores"></div>
         </div>
+        <div class="footer-credit">Designed by 凯文老师 🪄</div>
     </div>
 
     <script>
-        // --- ✏️ 这里是你要修改的数据 ---
-        // 格式: "手机号": { name: "名字", score: "成绩" }
-        const database = {
-            "13800138000": { name: "小樱 🌸", score: "语文: 98 | 数学: 95<br>英语: 100 | 魔法: SS" },
-            "123456": { name: "测试宝宝 👶", score: "吃饭: 100分 | 睡觉: 100分" },
-            "13999999999": { name: "鸣人 🍥", score: "忍术: 60 | 影分身: 100" },
-            "13666666666": { name: "哆啦A梦 🔔", score: "铜锣烧鉴赏: 100" },
-            "13377517603": { name: "肖凯文", score: "数学: 100" }
-            
-        };
+        let studentData = [];
+
+        // 自动读取 data.xlsx
+        fetch('data.xlsx?v=' + new Date().getTime())
+            .then(response => {
+                if (!response.ok) throw new Error("找不到 data.xlsx");
+                return response.arrayBuffer();
+            })
+            .then(data => {
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                studentData = jsonData.map(row => {
+                    // 1. 获取三科成绩 (如果没填就默认为0)
+                    const yw = parseFloat(row['语文']) || 0;
+                    const sx = parseFloat(row['数学']) || 0;
+                    const yy = parseFloat(row['英语']) || 0;
+                    
+                    // 2. 自动计算平均分，用于判断动画等级
+                    // (如果你只想看总分，把 /3 去掉就行)
+                    const avg = (yw + sx + yy) / 3;
+
+                    return {
+                        name: row['姓名'] ? String(row['姓名']).trim() : "",
+                        birth: row['生日'] ? String(row['生日']).trim() : "", 
+                        // 3. 拼接显示的文字
+                        score: `语文：${row['语文'] || '-'}<br>数学：${row['数学'] || '-'}<br>英语：${row['英语'] || '-'}`,
+                        num: avg // 存下平均分
+                    };
+                });
+                console.log("加载成功，人数:", studentData.length);
+            })
+            .catch(err => {
+                console.error(err);
+                if(studentData.length === 0) alert("正在准备数据，请稍后再试...");
+            });
 
         function checkGrade() {
-            const phone = document.getElementById('phoneInput').value.trim();
+            const name = document.getElementById('nameInput').value.trim();
+            const birth = document.getElementById('birthInput').value.trim();
             const resultDiv = document.getElementById('result');
             const nameDiv = document.getElementById('nameDisplay');
             const scoreDiv = document.getElementById('scoreDisplay');
+            const btn = document.getElementById('searchBtn');
 
-            if (!phone) {
-                alert("🐷 还没有输入手机号哦！");
-                return;
-            }
+            if (!name || !birth) { alert("🐰 姓名和生日都要填哦！"); return; }
 
-            if (database[phone]) {
-                // 查到了
+            btn.disabled = true; btn.innerText = "🔮 正在施法...";
+            resultDiv.style.display = "none"; resultDiv.className = "result-area";
+
+            setTimeout(() => {
+                btn.disabled = false; btn.innerText = "✨ 查询 ✨";
+                
+                const found = studentData.find(s => s.name === name && s.birth === birth);
+                
                 resultDiv.style.display = "block";
-                nameDiv.innerHTML = "🎉 学员: " + database[phone].name;
-                scoreDiv.innerHTML = database[phone].score;
-            } else {
-                // 没查到
-                resultDiv.style.display = "block";
-                nameDiv.innerHTML = "🚫 哎呀...";
-                scoreDiv.innerHTML = "找不到这个号码的成绩呢<br>请确认一下是不是输错啦？";
-            }
+                if (found) {
+                    nameDiv.innerHTML = "🎉 学员: " + found.name;
+                    scoreDiv.innerHTML = found.score;
+                    
+                    // 根据平均分自动判断动画 (90以上金色，80以上蓝色，60以上紫色)
+                    if (found.num >= 90) resultDiv.classList.add("rank-s");
+                    else if (found.num >= 80) resultDiv.classList.add("rank-a");
+                    else if (found.num >= 60) resultDiv.classList.add("rank-b");
+                    else resultDiv.classList.add("rank-c");
+                } else {
+                    resultDiv.style.background = "#f5f6fa";
+                    resultDiv.style.border = "2px dashed #dcdde1";
+                    nameDiv.innerHTML = "🍃 哎呀...";
+                    scoreDiv.innerHTML = "找不到该信息<br>请确认姓名和生日(如0101)是否正确";
+                }
+            }, 600);
         }
     </script>
 </body>
