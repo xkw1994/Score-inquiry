@@ -1,7 +1,7 @@
 import streamlit as st
 import time
 
-# --- 1. 页面基础配置 ---
+# --- 1. 页面配置 ---
 st.set_page_config(
     page_title="凯文老师的✨成绩魔法屋✨",
     page_icon="🐰",
@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. 暴力 CSS (针对组件内部样式的深度定制) ---
+# --- 2. 暴力 CSS (只做居中这一件事) ---
 st.markdown("""
     <style>
     /* 全局背景 */
@@ -19,23 +19,22 @@ st.markdown("""
         font-family: "Microsoft YaHei", sans-serif !important;
     }
     
-    /* 隐藏无关元素 */
+    /* 隐藏杂项 */
     header, footer, .viewerBadge_container__1QSob { display: none !important; }
 
-    /* 卡片容器适配 */
+    /* 卡片容器：手机端适配 */
     .block-container {
         background: rgba(255, 255, 255, 0.95) !important;
         border-radius: 30px !important;
-        padding: 2rem 1.5rem !important;
+        padding: 3rem 1rem !important; /* 上下宽一点，左右窄一点 */
         margin-top: 40px !important;
         box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
         max-width: 420px !important;
     }
     @media only screen and (max-width: 600px) {
         .block-container {
-            width: 92% !important;
+            width: 90% !important;
             margin-top: 20px !important;
-            padding: 2rem 1rem !important;
         }
     }
 
@@ -45,46 +44,52 @@ st.markdown("""
         text-align: center !important;
         font-size: 26px !important;
         font-weight: 800 !important;
-        margin-bottom: 5px !important;
+        margin-bottom: 20px !important;
     }
 
-    /* === 修复输入框高度 (Target data-baseweb) === */
-    /* Streamlit 的输入框很复杂，必须针对这个 baseweb 属性修改才生效 */
+    /* === ⚡️ 核心修复：输入框居中 + 高度 === */
+    /* 1. 锁定输入框外层容器的宽度，并居中 */
+    div[data-testid="stTextInput"] {
+        width: 85% !important;        /* 宽度只占 85% */
+        margin-left: auto !important; /* 左边自动 */
+        margin-right: auto !important;/* 右边自动 -> 结果就是居中 */
+    }
+
+    /* 2. 修改输入框本体样式 */
     div[data-baseweb="input"] {
         border-radius: 50px !important;
         border: 2px solid #ffcccc !important;
         background-color: #fff !important;
-        height: 60px !important;  /* 强制增高外框 */
+        height: 60px !important;      /* 强制高度 60px */
         padding: 0 15px !important;
     }
-    
-    /* 内部输入的文字 */
     div[data-baseweb="input"] input {
         text-align: center !important;
         font-size: 18px !important;
         color: #555 !important;
-        height: 100% !important;
-        margin-top: 2px !important; /* 微调文字垂直位置 */
-    }
-    
-    /* 选中状态 */
-    div[data-baseweb="input"]:focus-within {
-        border-color: #ff6b81 !important;
-        box-shadow: 0 0 10px rgba(255, 107, 129, 0.3) !important;
     }
 
-    /* === 修复按钮 (配合 Python columns 使用) === */
+    /* === ⚡️ 核心修复：按钮居中 === */
+    /* 1. 锁定按钮外层容器的宽度，并居中 */
+    .stButton {
+        width: 85% !important;        /* 跟输入框一样宽 */
+        margin-left: auto !important; /* 强制居中 */
+        margin-right: auto !important;/* 强制居中 */
+        margin-top: 20px !important;
+        display: block !important;    /* 块级元素才能居中 */
+    }
+
+    /* 2. 按钮本体填满容器 */
     div.stButton > button {
-        width: 100% !important;  /* 填满所在的列 */
-        height: 60px !important; /* 高度与输入框一致 */
+        width: 100% !important;       /* 填满那 85% 的宽度 */
+        height: 60px !important;
         background: linear-gradient(to right, #ff9a9e 0%, #fecfef 100%) !important;
         color: white !important;
         border-radius: 50px !important;
         border: none !important;
         font-size: 20px !important;
         font-weight: bold !important;
-        box-shadow: 0 8px 15px rgba(255, 154, 158, 0.4) !important;
-        padding: 0 !important;
+        box-shadow: 0 8px 20px rgba(255, 154, 158, 0.4) !important;
     }
     div.stButton > button:active {
         transform: scale(0.98);
@@ -97,8 +102,10 @@ st.markdown("""
         border-radius: 20px;
         padding: 20px;
         text-align: center;
-        margin-top: 25px;
-        color: #555;
+        margin-top: 30px;
+        width: 90% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -111,23 +118,11 @@ student_database = {
 
 # --- 4. 界面逻辑 ---
 st.markdown("<h1>🐰 期末成绩查询</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#ccc; font-size:14px; margin-bottom:15px;'>请输入手机号召唤成绩单</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#ccc; font-size:14px; margin-bottom:10px;'>请输入手机号召唤成绩单</p>", unsafe_allow_html=True)
 
-# 输入框
 phone_input = st.text_input("label", placeholder="在此输入手机号...", label_visibility="collapsed")
 
-# 增加一点间距
-st.write("")
-
-# === 🔥 核心修改：使用 Columns 布局强制居中 🔥 ===
-# 我们创建3列：[空, 中间内容, 空]。中间列占 90% 宽度，左右留一点点白
-# 这样按钮就被强制关在了“中间列”里，想跑偏都跑不了！
-col1, col2, col3 = st.columns([0.05, 0.9, 0.05])
-
-with col2:
-    search_btn = st.button("✨ 查 询 ✨")
-
-if search_btn:
+if st.button("✨ 查 询 ✨"):
     if not phone_input:
         st.warning("⚠️ 还没输入手机号哦")
     elif phone_input in student_database:
@@ -137,7 +132,7 @@ if search_btn:
         st.markdown(f"""
             <div class="result-card">
                 <h3 style="color:#ff6b81; margin:0 0 10px 0;">🎉 找到啦: {data['name']}</h3>
-                <div style="font-size:16px; line-height:1.8;">{data['scores']}</div>
+                <div style="font-size:16px; line-height:1.8; color:#555;">{data['scores']}</div>
             </div>
         """, unsafe_allow_html=True)
         st.balloons()
