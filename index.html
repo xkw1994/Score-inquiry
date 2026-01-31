@@ -22,7 +22,7 @@
             font-family: "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif; 
             margin: 0; 
             -webkit-tap-highlight-color: transparent;
-            overflow: hidden; /* 防止烟花撑开滚动条 */
+            overflow: hidden; 
         }
 
         .card { 
@@ -35,7 +35,7 @@
             border: 1px solid rgba(255, 255, 255, 0.6);
             transition: all 0.3s ease;
             position: relative;
-            z-index: 10; /* 保证卡片在烟花上面 */
+            z-index: 10; 
         }
 
         h1 { color: #ff6b81; font-size: 24px; margin-bottom: 5px; letter-spacing: 1px; }
@@ -96,14 +96,27 @@
         .rank-b { background: #f3f0ff; border: 1.5px solid #845ef7; animation: jelly 0.6s forwards; } .rank-b::after { content: "✨ 循序渐进"; display: block; margin-top: 8px; font-size: 11px; color: #845ef7; font-weight: bold; }
         .rank-c { background: #fff5f5; border: 1.5px solid #ff8787; animation: jelly 0.6s forwards; } .rank-c::after { content: "⚡ 蓄势待发"; display: block; margin-top: 8px; font-size: 11px; color: #ff8787; font-weight: bold; }
         
+        /* 错误提示样式 */
         .not-found { background: #f8f9fa; border: 1.5px dashed #dee2e6; color: #495057; animation: jelly 0.5s forwards; }
         .err-name { background: #fff5f5; border: 1.5px dashed #ffc9c9; }
         .err-birth { background: #fff8e1; border: 1.5px dashed #ffe066; }
-        
         .help-box { margin-top: 12px; background: #fff; padding: 10px; border-radius: 12px; border: 1px solid #f1f2f6; color: #7f8c8d; font-size: 13px; }
         .teacher-name { font-weight: bold; color: #ff6b81; }
 
-        .copyright { margin-top: 35px; font-size: 10px; color: #d1d8e0; letter-spacing: 0.8px; text-transform: uppercase; }
+        /* ✨ 经典版权样式 */
+        .copyright { 
+            margin-top: 30px; 
+            display: inline-block; 
+            padding: 6px 15px; 
+            border-radius: 20px; 
+            background: rgba(255, 230, 235, 0.4); 
+            border: 1px solid rgba(255, 107, 129, 0.1); 
+            font-size: 11px; 
+            color: #ff6b81;
+            font-family: Arial, sans-serif; 
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -137,14 +150,14 @@
         </div>
         
         <div class="copyright">
-            © 2026 Designed by Kevin
+            &copy; 2026 Designed by Kevin
         </div>
     </div>
 
     <script>
         // --- 🟢 核心数据库 (50位同学) ---
         const rawData = [
-            ["肖凯文", "1120", 99.5, 94, 94.5], ["曹晞宣", "0409", 84, 99, 95], ["陈好", "0110", 74.5, 95, 92],
+            ["肖凯文", "1120", 93.5, 94, 95.5], ["曹晞宣", "0409", 84, 99, 95], ["陈好", "0110", 74.5, 95, 92],
             ["陈佳星", "0826", 86.5, 100, 77.5], ["陈思耀", "0427", 79.5, 76.5, 87.3], ["陈宇浩", "0623", 79.5, 88, 28],
             ["陈梓仪", "0920", 4, 7, 21.5], ["戴诗宸", "1124", 35.5, 17.5, 19.5], ["邓楚和", "0630", 32, 29, 22],
             ["邓恒", "0523", 84.3, 93.5, 98], ["邓苏嵘", "0401", 78.8, 93.5, 52], ["邓新乐", "1001", 13, 39.5, 19.5],
@@ -163,7 +176,6 @@
             ["刘妤裴", "0611", 84.5, 82.5, 92.3], ["刘育铭", "0208", 15, 10, 20]
         ];
 
-        // 处理逻辑
         const db = rawData.map(row => {
             let b = String(row[1]).trim();
             if (b.length === 3) b = "0" + b;
@@ -183,7 +195,6 @@
                 var timeLeft = animationEnd - Date.now();
                 if (timeLeft <= 0) { return clearInterval(interval); }
                 var particleCount = 50 * (timeLeft / duration);
-                // 两个发射点，左右开弓
                 confetti(Object.assign({}, defaults, { particleCount, origin: { x: 0.1, y: Math.random() - 0.2 } }));
                 confetti(Object.assign({}, defaults, { particleCount, origin: { x: 0.9, y: Math.random() - 0.2 } }));
             }, 250);
@@ -193,12 +204,8 @@
             var end = Date.now() + 1000;
             var colors = ['#64b5f6', '#ffd700'];
             (function frame() {
-                confetti({
-                    particleCount: 2, angle: 60, spread: 55, origin: { x: 0 }, colors: colors, zIndex: 0
-                });
-                confetti({
-                    particleCount: 2, angle: 120, spread: 55, origin: { x: 1 }, colors: colors, zIndex: 0
-                });
+                confetti({ particleCount: 2, angle: 60, spread: 55, origin: { x: 0 }, colors: colors, zIndex: 0 });
+                confetti({ particleCount: 2, angle: 120, spread: 55, origin: { x: 1 }, colors: colors, zIndex: 0 });
                 if (Date.now() < end) requestAnimationFrame(frame);
             }());
         }
@@ -213,10 +220,7 @@
             var end = Date.now() + 3000;
             var colors = ['#ffc0cb', '#ffb7b2'];
             (function frame() {
-                confetti({
-                    particleCount: 2, angle: 270, spread: 120, startVelocity: 15, origin: { y: -0.1 }, 
-                    colors: colors, shapes: ['circle'], scalar: 0.8, drift: 0.5, gravity: 0.8, ticks: 300, zIndex: 0
-                });
+                confetti({ particleCount: 2, angle: 270, spread: 120, startVelocity: 15, origin: { y: -0.1 }, colors: colors, shapes: ['circle'], scalar: 0.8, drift: 0.5, gravity: 0.8, ticks: 300, zIndex: 0 });
                 if (Date.now() < end) requestAnimationFrame(frame);
             }());
         }
@@ -239,41 +243,24 @@
 
             setTimeout(() => {
                 btn.disabled = false; btn.innerText = "✨ 查询 ✨";
-                
-                // 1. 精确诊断
                 const targetStudent = db.find(s => s.n === name);
                 
                 if (targetStudent) {
                     if (targetStudent.b === birth) {
-                        // --- 🟢 成功！触发特效 ---
                         resultDiv.style.display = "block";
                         nameDiv.innerHTML = "🎉 " + targetStudent.n + " 同学";
                         scoreDiv.innerHTML = targetStudent.s;
-
-                        if (targetStudent.t >= 270) {
-                            resultDiv.classList.add("rank-s");
-                            triggerFireworks(); // 🏆 烟花雨
-                        } else if (targetStudent.t >= 240) {
-                            resultDiv.classList.add("rank-a");
-                            triggerStreamers(); // 🚀 礼炮彩带
-                        } else if (targetStudent.t >= 180) {
-                            resultDiv.classList.add("rank-b");
-                            triggerStars(); // ✨ 星星散落
-                        } else {
-                            resultDiv.classList.add("rank-c");
-                            triggerSakura(); // 🌸 樱花漫天 (治愈系)
-                        }
+                        if (targetStudent.t >= 270) { resultDiv.classList.add("rank-s"); triggerFireworks(); }
+                        else if (targetStudent.t >= 240) { resultDiv.classList.add("rank-a"); triggerStreamers(); }
+                        else if (targetStudent.t >= 180) { resultDiv.classList.add("rank-b"); triggerStars(); }
+                        else { resultDiv.classList.add("rank-c"); triggerSakura(); }
                     } else {
-                        // 🟡 名字对，生日错
-                        resultDiv.style.display = "block";
-                        resultDiv.classList.add("not-found", "err-birth");
+                        resultDiv.style.display = "block"; resultDiv.classList.add("not-found", "err-birth");
                         nameDiv.innerHTML = "🔒 验证失败";
                         scoreDiv.innerHTML = `已找到 <strong>${name}</strong> 同学的档案，<br>但你输入的生日口令 <strong>${birth}</strong> 不正确。<div class="help-box">请检查：是4位数字吗？(例如 0101)</div>`;
                     }
                 } else {
-                    // 🔴 名字没找到
-                    resultDiv.style.display = "block";
-                    resultDiv.classList.add("not-found", "err-name");
+                    resultDiv.style.display = "block"; resultDiv.classList.add("not-found", "err-name");
                     nameDiv.innerHTML = "🚫 档案未找到";
                     scoreDiv.innerHTML = `数据库中没有找到名为 <strong>${name}</strong> 的学生。<br>请核对姓名是否输入正确。<div class="help-box">💡 如有疑问，请私聊 <span class="teacher-name">凯文老师</span></div>`;
                 }
