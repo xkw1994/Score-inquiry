@@ -8,7 +8,7 @@
     <style>
         /* --- 样式区 --- */
         body { background-image: linear-gradient(120deg, #fccb90 0%, #d57eeb 100%); height: 100vh; display: flex; justify-content: center; align-items: center; font-family: "Microsoft YaHei", sans-serif; margin: 0; }
-        .card { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 320px; border: 4px solid #fff; }
+        .card { background: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 320px; border: 4px solid #fff; position: relative; }
         h1 { color: #ff6b81; font-size: 24px; margin-bottom: 5px; }
         p.subtitle { color: #a4b0be; font-size: 14px; margin-bottom: 25px; }
         .input-group { margin-bottom: 15px; }
@@ -19,8 +19,11 @@
         button:disabled { background: #dcdde1; cursor: not-allowed; }
         .result-area { margin-top: 25px; padding: 20px; border-radius: 15px; display: none; }
         .student-name { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #333; }
-        .scores { line-height: 1.8; font-size: 16px; color: #555; } /* 稍微调大了行高，让三门课排版更好看 */
+        .scores { line-height: 1.8; font-size: 16px; color: #555; }
         .footer-credit { margin-top: 25px; font-size: 12px; color: #dfe6e9; letter-spacing: 1px; }
+        
+        /* 状态提示条 */
+        #status-bar { font-size: 12px; color: #aaa; margin-top: 10px; }
 
         /* 动画样式 */
         @keyframes jelly { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
@@ -37,6 +40,9 @@
         <div class="input-group"><input type="text" id="nameInput" placeholder="请输入姓名"></div>
         <div class="input-group"><input type="tel" id="birthInput" placeholder="请输入4位生日 (如: 0101)" maxlength="4"></div>
         <button id="searchBtn" onclick="checkGrade()">✨ 查询 ✨</button>
+        
+        <div id="status-bar">正在连接数据...</div>
+
         <div id="result" class="result-area">
             <div id="nameDisplay" class="student-name"></div>
             <div id="scoreDisplay" class="scores"></div>
@@ -46,11 +52,12 @@
 
     <script>
         let studentData = [];
+        const statusDiv = document.getElementById('status-bar');
 
-        // 自动读取 data.xlsx
+        // 加载 Excel
         fetch('data.xlsx?v=' + new Date().getTime())
             .then(response => {
-                if (!response.ok) throw new Error("找不到 data.xlsx");
+                if (!response.ok) throw new Error("文件名不对或文件未上传");
                 return response.arrayBuffer();
             })
             .then(data => {
@@ -59,28 +66,32 @@
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
                 studentData = jsonData.map(row => {
-                    // 1. 获取三科成绩 (如果没填就默认为0)
                     const yw = parseFloat(row['语文']) || 0;
                     const sx = parseFloat(row['数学']) || 0;
                     const yy = parseFloat(row['英语']) || 0;
-                    
-                    // 2. 自动计算平均分，用于判断动画等级
-                    // (如果你只想看总分，把 /3 去掉就行)
                     const avg = (yw + sx + yy) / 3;
 
+                    // --- 核心修复：自动给生日补0 ---
+                    // 如果读出来是 101，自动变成 "0101"
+                    let birthStr = String(row['生日'] || "").trim();
+                    if (birthStr.length === 3) birthStr = "0" + birthStr; 
+
                     return {
-                        name: row['姓名'] ? String(row['姓名']).trim() : "",
-                        birth: row['生日'] ? String(row['生日']).trim() : "", 
-                        // 3. 拼接显示的文字
+                        name: String(row['姓名'] || "").trim(),
+                        birth: birthStr, 
                         score: `语文：${row['语文'] || '-'}<br>数学：${row['数学'] || '-'}<br>英语：${row['英语'] || '-'}`,
-                        num: avg // 存下平均分
+                        num: avg
                     };
                 });
-                console.log("加载成功，人数:", studentData.length);
+                
+                // 状态栏提示成功
+                statusDiv.innerText = `✅ 成功加载 ${studentData.length} 位同学数据`;
+                statusDiv.style.color = "#4caf50"; // 绿色
             })
             .catch(err => {
                 console.error(err);
-                if(studentData.length === 0) alert("正在准备数据，请稍后再试...");
+                statusDiv.innerHTML = "❌ <b>数据加载失败</b><br>请检查 GitHub 里是否有名为 data.xlsx 的文件";
+                statusDiv.style.color = "#f44336"; // 红色
             });
 
         function checkGrade() {
@@ -93,20 +104,20 @@
 
             if (!name || !birth) { alert("🐰 姓名和生日都要填哦！"); return; }
 
+            // 施法动画
             btn.disabled = true; btn.innerText = "🔮 正在施法...";
             resultDiv.style.display = "none"; resultDiv.className = "result-area";
 
             setTimeout(() => {
                 btn.disabled = false; btn.innerText = "✨ 查询 ✨";
                 
+                // 查找逻辑
                 const found = studentData.find(s => s.name === name && s.birth === birth);
                 
                 resultDiv.style.display = "block";
                 if (found) {
                     nameDiv.innerHTML = "🎉 学员: " + found.name;
                     scoreDiv.innerHTML = found.score;
-                    
-                    // 根据平均分自动判断动画 (90以上金色，80以上蓝色，60以上紫色)
                     if (found.num >= 90) resultDiv.classList.add("rank-s");
                     else if (found.num >= 80) resultDiv.classList.add("rank-a");
                     else if (found.num >= 60) resultDiv.classList.add("rank-b");
@@ -115,7 +126,8 @@
                     resultDiv.style.background = "#f5f6fa";
                     resultDiv.style.border = "2px dashed #dcdde1";
                     nameDiv.innerHTML = "🍃 哎呀...";
-                    scoreDiv.innerHTML = "找不到该信息<br>请确认姓名和生日(如0101)是否正确";
+                    // 贴心提示
+                    scoreDiv.innerHTML = `找不到该信息<br>1. 请确认文件是 data.xlsx<br>2. 你的输入: ${name} / ${birth}`;
                 }
             }, 600);
         }
