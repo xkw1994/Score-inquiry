@@ -4,10 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>✨ 魔法成绩屋 ✨</title>
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
+    
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     
     <style>
-        /* --- 基础魔法 CSS --- */
+        /* --- 核心主题 CSS --- */
         body { 
             background-image: linear-gradient(120deg, #fccb90 0%, #d57eeb 100%); 
             height: 100vh; 
@@ -34,95 +37,69 @@
         h1 { color: #ff6b81; font-size: 24px; margin-bottom: 5px; text-shadow: 1px 1px 2px rgba(255,107,129,0.2); }
         p.subtitle { color: #a4b0be; font-size: 14px; margin-bottom: 15px; }
         
-        /* 📊 系统状态条 (B方案：真实累计数据) */
+        /* 🛡️ 高级系统状态栏 */
         .system-status {
             display: flex;
             justify-content: center;
-            gap: 15px;
-            font-size: 12px;
-            color: #95a5a6;
+            align-items: center;
+            gap: 12px;
+            font-size: 11px;
+            color: #7f8c8d;
             margin-bottom: 25px;
-            background: #f7f9fa;
-            padding: 8px;
-            border-radius: 20px;
+            background: #f1f2f6;
+            padding: 8px 15px;
+            border-radius: 50px;
+            border: 1px solid #dfe4ea;
+            letter-spacing: 0.5px;
         }
-        .status-item { display: flex; align-items: center; gap: 4px; }
+        .status-item { display: flex; align-items: center; gap: 5px; }
+        .data-num { font-weight: bold; color: #2f3542; }
+
+        /* 🟢 经典绿色呼吸灯 */
         .live-dot {
-            width: 8px; height: 8px; background: #3498db; border-radius: 50%;
-            box-shadow: 0 0 5px #3498db;
+            width: 7px; height: 7px; background: #2ecc71; border-radius: 50%;
+            box-shadow: 0 0 5px #2ecc71;
+            animation: pulse 2s infinite;
         }
+        @keyframes pulse { 0% { opacity: 0.5; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.5; transform: scale(0.9); } }
 
         .input-group { margin-bottom: 15px; position: relative; }
         
         input { 
-            width: 85%; 
-            padding: 12px; 
-            border: 2px solid #ffcccc; 
-            border-radius: 15px; 
-            outline: none; 
-            font-size: 16px; 
-            text-align: center; 
-            color: #555; 
-            background: #fffafa; 
-            transition: 0.3s; 
+            width: 85%; padding: 12px; border: 2px solid #ffcccc; border-radius: 15px; outline: none; 
+            font-size: 16px; text-align: center; color: #555; background: #fffafa; transition: 0.3s; 
         }
         input:focus { border-color: #ff6b81; background: #fff; box-shadow: 0 0 10px rgba(255, 107, 129, 0.2); transform: scale(1.02); }
 
-        /* 错误震动动画 */
-        @keyframes shake {
-            0% { transform: translateX(0); } 25% { transform: translateX(-5px); border-color: #ff6b81; }
-            75% { transform: translateX(5px); border-color: #ff6b81; } 100% { transform: translateX(0); }
-        }
+        /* 错误反馈动画 */
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         .input-error { animation: shake 0.3s ease-in-out; }
 
         button { 
-            width: 90%; 
-            margin-top: 10px; 
-            background: linear-gradient(to right, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); 
-            border: none; 
-            padding: 12px 0; 
-            border-radius: 50px; 
-            color: white; 
-            font-weight: bold; 
-            font-size: 16px; 
-            cursor: pointer; 
-            box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4); 
-            transition: all 0.2s; 
-            user-select: none;
+            width: 90%; margin-top: 10px; background: linear-gradient(to right, #ff9a9e 0%, #fecfef 99%); 
+            border: none; padding: 12px 0; border-radius: 50px; color: white; font-weight: bold; 
+            font-size: 16px; cursor: pointer; box-shadow: 0 5px 15px rgba(255, 154, 158, 0.4); 
+            transition: all 0.2s; user-select: none;
         }
         button:active { transform: scale(0.95); }
-        button:disabled { background: #dcdde1; cursor: not-allowed; box-shadow: none; }
+        button:disabled { background: #ced6e0; cursor: not-allowed; box-shadow: none; }
 
         .result-area { margin-top: 25px; padding: 20px; border-radius: 15px; display: none; }
-        .student-name { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #333; }
-        .scores { line-height: 1.8; font-size: 16px; color: #555; }
+        .student-name { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #2f3542; }
+        .scores { line-height: 1.8; font-size: 16px; color: #57606f; }
         
-        /* --- 🏆 基于总分的四档动画 --- */
-        
-        /* 1. 王者 (总分270以上): 金色传说 */
+        /* 动画与评语段位 */
         @keyframes jelly { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
-        .rank-s { background: #fff8e1; border: 2px solid #ffca28; animation: jelly 0.8s ease-out forwards; } 
-        .rank-s::after { content: " 🏆 卓越之星"; display: block; margin-top: 10px; font-size: 12px; color: #ffca28; font-weight: bold; }
-
-        /* 2. 星耀 (总分240以上): 蓝色科技 */
-        .rank-a { background: #e3f2fd; border: 2px solid #64b5f6; animation: jelly 0.6s ease-out forwards; } 
-        .rank-a::after { content: " 🌟 进步之星"; display: block; margin-top: 10px; font-size: 12px; color: #64b5f6; font-weight: bold; }
-
-        /* 3. 钻石 (总分180以上): 紫色梦幻 */
-        .rank-b { background: #f3e5f5; border: 2px solid #ba68c8; animation: jelly 0.6s ease-out forwards; } 
-        .rank-b::after { content: " 🙂 继续加油"; display: block; margin-top: 10px; font-size: 12px; color: #ba68c8; font-weight: bold; }
-
-        /* 4. 青铜 (总分180以下): 暖心粉色 */
-        .rank-c { background: #ffebee; border: 2px solid #e57373; animation: jelly 0.6s ease-out forwards; } 
-        .rank-c::after { content: " 💪 努力冲刺"; display: block; margin-top: 10px; font-size: 12px; color: #e57373; font-weight: bold; }
+        .rank-s { background: #fff9db; border: 2px solid #fcc419; animation: jelly 0.8s ease-out forwards; } .rank-s::after { content: " 👑 荣耀时刻"; display: block; margin-top: 8px; font-size: 12px; color: #fcc419; font-weight: bold; }
+        .rank-a { background: #e7f5ff; border: 2px solid #339af0; animation: jelly 0.6s ease-out forwards; } .rank-a::after { content: " 🚀 乘风破浪"; display: block; margin-top: 8px; font-size: 12px; color: #339af0; font-weight: bold; }
+        .rank-b { background: #f3f0ff; border: 2px solid #845ef7; animation: jelly 0.6s ease-out forwards; } .rank-b::after { content: " ✨ 循序渐进"; display: block; margin-top: 8px; font-size: 12px; color: #845ef7; font-weight: bold; }
+        .rank-c { background: #fff5f5; border: 2px solid #ff8787; animation: jelly 0.6s ease-out forwards; } .rank-c::after { content: " ⚡ 蓄势待发"; display: block; margin-top: 8px; font-size: 12px; color: #ff8787; font-weight: bold; }
         
-        /* 错误提示样式 */
-        .not-found { background: #fff5f5; border: 2px dashed #ffb3b3; color: #7f8c8d; animation: jelly 0.5s ease-out forwards; }
-        .help-box { margin-top: 15px; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #ffcdd2; color: #e57373; font-size: 14px; }
-        .teacher-name { font-weight: bold; color: #ff6b81; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
+        .not-found { background: #f8f9fa; border: 2px dashed #ced4da; color: #495057; animation: jelly 0.5s ease-out forwards; }
+        .help-box { margin-top: 12px; background: #fff; padding: 10px; border-radius: 10px; border: 1px solid #ffcdd2; color: #fa5252; font-size: 13px; }
+        .teacher-name { font-weight: bold; color: #ff6b81; text-decoration: underline; }
 
-        /* 版权 */
-        .copyright { margin-top: 30px; font-size: 10px; color: #d1d8e0; font-family: Arial, sans-serif; letter-spacing: 0.5px; }
+        .copyright { margin-top: 30px; font-size: 10px; color: #cbd5e0; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
@@ -132,12 +109,12 @@
 
         <div class="system-status">
             <div class="status-item">
-                <span>📚 已录入 <span id="dataCount" style="font-weight:bold; color:#555;">0</span> 人</span>
+                <span> 数据库已同步50人 <span id="dataCount" class="data-num">0</span> 份</span>
             </div>
-            <div style="width:1px; height:12px; background:#ddd;"></div>
+            <div style="width:1px; height:10px; background:#ddd;"></div>
             <div class="status-item">
                 <div class="live-dot"></div>
-                <span>🔥 累计访问 <span id="busuanzi_value_page_pv" style="font-weight:bold; color:#555;">...</span> 次</span>
+                <span>累计访问 <span id="busuanzi_value_page_pv" class="data-num">...</span> 次</span>
             </div>
         </div>
         
@@ -161,57 +138,36 @@
     </div>
 
     <script>
-        // --- 🟢 数据区 (50位同学) ---
+        // --- 🟢 数据区 (从图片识别录入的50位同学) ---
         const rawData = [
-            ["肖凯文", "1120", 95, 96, 92], ["曹晞宣", "0409", 84, 99, 95],
-            ["陈好", "0110", 74.5, 95, 92], ["陈佳星", "0826", 86.5, 100, 77.5],
-            ["陈思耀", "0427", 79.5, 76.5, 87.3], ["陈宇浩", "0623", 79.5, 88, 28],
-            ["陈梓仪", "0920", 4, 7, 21.5], ["戴诗宸", "1124", 35.5, 17.5, 19.5],
-            ["邓楚和", "0630", 32, 29, 22], ["邓恒", "0523", 84.3, 93.5, 98],
-            ["邓苏嵘", "0401", 78.8, 93.5, 52], ["邓新乐", "1001", 13, 39.5, 19.5],
-            ["顾谭浩", "0225", 86.8, 90, 93.5], ["官靖裕", "1009", 41, 78.5, 56.8],
-            ["何泉", "0725", 13, 62, 24], ["何咏珊", "0311", 57, 75.5, 59],
-            ["胡浩鑫", "0407", 82.5, 97, 89.5], ["胡文山", "0721", 67.5, 76, 56.5],
-            ["黄家和", "0630", 40.5, 20, 25.5], ["黄靖诗", "0212", 90, 96, 99.5],
-            ["黄梦灵", "0108", 77.3, 95, 54.5], ["黄胜", "0823", 18.5, 93, 23.5],
-            ["黄艳萍", "0204", 87, 80, 92.5], ["黄政烨", "0824", 42, 74, 24.5],
-            ["黄子良", "0712", 79, 70, 76], ["孔筠瑶", "1221", 60, 82.5, 87.5],
-            ["邝静怡", "0824", 87.8, 97, 97.5], ["李安倪", "0811", 76.3, 97, 82],
-            ["李博文", "1024", 61.5, 62.5, 28.5], ["李嘉豪", "0925", 20.5, 73.5, 26],
-            ["李嘉俊", "1103", 72, 85.5, 73.8], ["李俊良", "0201", 57.5, 65.5, 39.5],
-            ["李圣标", "0925", 80.5, 76.5, 55.5], ["李思霖", "0906", 56.5, 66, 27],
-            ["李彦忻", "0310", 79.5, 96, 89], ["廖盈潞", "0620", 80, 91, 92.5],
-            ["林博文", "0707", 26, 18, 20], ["林嘉杰", "1228", 87.8, 87, 97],
-            ["林心怡", "0320", 60.5, 71.5, 35], ["林振轩", "0226", 85.8, 99, 99.8],
-            ["凌静怡", "0629", 87.5, 95, 98.5], ["刘辰宇", "0422", 84.3, 33.5, 47.3],
-            ["刘馥源", "0516", 62.5, 74, 34.5], ["刘家权", "1204", 54, 65.5, 43],
-            ["刘能康", "0327", 42, 50, 28], ["刘润东", "0823", 62.5, 48, 37],
-            ["刘晓宇", "1120", 72, 66, 53], ["刘欣怡", "0716", 66.5, 83, 23.5],
+            ["肖凯文", "1120", 99.5, 94, 95], ["曹晞宣", "0409", 84, 99, 95], ["陈好", "0110", 74.5, 95, 92],
+            ["陈佳星", "0826", 86.5, 100, 77.5], ["陈思耀", "0427", 79.5, 76.5, 87.3], ["陈宇浩", "0623", 79.5, 88, 28],
+            ["陈梓仪", "0920", 4, 7, 21.5], ["戴诗宸", "1124", 35.5, 17.5, 19.5], ["邓楚和", "0630", 32, 29, 22],
+            ["邓恒", "0523", 84.3, 93.5, 98], ["邓苏嵘", "0401", 78.8, 93.5, 52], ["邓新乐", "1001", 13, 39.5, 19.5],
+            ["顾谭浩", "0225", 86.8, 90, 93.5], ["官靖裕", "1009", 41, 78.5, 56.8], ["何泉", "0725", 13, 62, 24],
+            ["何咏珊", "0311", 57, 75.5, 59], ["胡浩鑫", "0407", 82.5, 97, 89.5], ["胡文山", "0721", 67.5, 76, 56.5],
+            ["黄家和", "0630", 40.5, 20, 25.5], ["黄靖诗", "0212", 90, 96, 99.5], ["黄梦灵", "0108", 77.3, 95, 54.5],
+            ["黄胜", "0823", 18.5, 93, 23.5], ["黄艳萍", "0204", 87, 80, 92.5], ["黄政烨", "0824", 42, 74, 24.5],
+            ["黄子良", "0712", 79, 70, 76], ["孔筠瑶", "1221", 60, 82.5, 87.5], ["邝静怡", "0824", 87.8, 97, 97.5],
+            ["李安倪", "0811", 76.3, 97, 82], ["李博文", "1024", 61.5, 62.5, 28.5], ["李嘉豪", "0925", 20.5, 73.5, 26],
+            ["李嘉俊", "1103", 72, 85.5, 73.8], ["李俊良", "0201", 57.5, 65.5, 39.5], ["李圣标", "0925", 80.5, 76.5, 55.5],
+            ["李思霖", "0906", 56.5, 66, 27], ["李彦忻", "0310", 79.5, 96, 89], ["廖盈潞", "0620", 80, 91, 92.5],
+            ["林博文", "0707", 26, 18, 20], ["林嘉杰", "1228", 87.8, 87, 97], ["林心怡", "0320", 60.5, 71.5, 35],
+            ["林振轩", "0226", 85.8, 99, 99.8], ["凌静怡", "0629", 87.5, 95, 98.5], ["刘辰宇", "0422", 84.3, 33.5, 47.3],
+            ["刘馥源", "0516", 62.5, 74, 34.5], ["刘家权", "1204", 54, 65.5, 43], ["刘能康", "0327", 42, 50, 28],
+            ["刘润东", "0823", 62.5, 48, 37], ["刘晓宇", "1120", 72, 66, 53], ["刘欣怡", "0716", 66.5, 83, 23.5],
             ["刘妤裴", "0611", 84.5, 82.5, 92.3], ["刘育铭", "0208", 15, 10, 20]
         ];
 
-        // --- 数据逻辑 ---
-        const studentData = rawData.map(row => {
+        // 整理数据
+        const db = rawData.map(row => {
             let birth = String(row[1]).trim();
             if (birth.length === 3) birth = "0" + birth;
-            const yw = parseFloat(row[2]) || 0;
-            const sx = parseFloat(row[3]) || 0;
-            const yy = parseFloat(row[4]) || 0;
-            
-            // 计算总分 (不再是平均分)
-            const totalScore = yw + sx + yy;
-
-            return {
-                name: String(row[0]).trim(),
-                birth: birth,
-                score: `语文：${yw}<br>数学：${sx}<br>英语：${yy}<br><strong>总分：${totalScore}</strong>`, // 加上总分显示
-                total: totalScore // 存下总分用于判断动画
-            };
+            const total = parseFloat(row[2]) + parseFloat(row[3]) + parseFloat(row[4]);
+            return { name: row[0], birth: birth, scores: `语文：${row[2]}<br>数学：${row[3]}<br>英语：${row[4]}<br><strong>总分：${total.toFixed(1)}</strong>`, total: total };
         });
 
-        // 自动填入已录入人数
-        document.getElementById('dataCount').innerText = studentData.length;
-
+        document.getElementById('dataCount').innerText = db.length;
         document.addEventListener('keydown', (e) => { if(e.key === "Enter") checkGrade(); });
 
         function checkGrade() {
@@ -228,43 +184,28 @@
             if (!name) { nameEl.classList.add('input-error'); setTimeout(() => nameEl.classList.remove('input-error'), 300); return; }
             if (!birth) { birthEl.classList.add('input-error'); setTimeout(() => birthEl.classList.remove('input-error'), 300); return; }
 
-            btn.disabled = true; btn.innerText = "🔮 正在施法...";
-            resultDiv.style.display = "none"; 
-            resultDiv.className = "result-area"; 
+            btn.disabled = true; btn.innerText = "🔮 数据检索中...";
+            resultDiv.style.display = "none"; resultDiv.className = "result-area"; 
 
             setTimeout(() => {
                 btn.disabled = false; btn.innerText = "✨ 查询 ✨";
-                const found = studentData.find(s => s.name === name && s.birth === birth);
+                const found = db.find(s => s.name === name && s.birth === birth);
                 resultDiv.style.display = "block";
                 
                 if (found) {
-                    // 🎉 称呼改为“同学”
                     nameDiv.innerHTML = "🎉 " + found.name + " 同学";
-                    scoreDiv.innerHTML = found.score;
-
-                    // 🏆 基于总分(满分300)的特效逻辑
-                    if (found.total >= 270) { // 平均90分
-                        resultDiv.classList.add("rank-s");
-                    } else if (found.total >= 240) { // 平均80分
-                        resultDiv.classList.add("rank-a");
-                    } else if (found.total >= 180) { // 及格
-                        resultDiv.classList.add("rank-b");
-                    } else { // 不及格
-                        resultDiv.classList.add("rank-c");
-                    }
+                    scoreDiv.innerHTML = found.scores;
+                    if (found.total >= 270) resultDiv.classList.add("rank-s");
+                    else if (found.total >= 240) resultDiv.classList.add("rank-a");
+                    else if (found.total >= 180) resultDiv.classList.add("rank-b");
+                    else resultDiv.classList.add("rank-c");
                 } else {
                     resultDiv.classList.add("not-found");
                     nameDiv.innerHTML = "🤔 似乎迷路了...";
-                    scoreDiv.innerHTML = `
-                        没有找到这位同学的信息呢。<br>
-                        请确认：名字没写错？生日是4位？
-                        <div class="help-box">
-                            💡 还是查不到？<br>
-                            别着急，快去私聊 <span class="teacher-name">凯文老师</span> 吧！
-                        </div>
-                    `;
+                    scoreDiv.innerHTML = `未在核心数据库中检索到信息。<br>请核对姓名和4位生日。
+                        <div class="help-box">💡 还是查不到？<br>别着急，快去私聊 <span class="teacher-name">凯文老师</span> 吧！</div>`;
                 }
-            }, 500);
+            }, 600);
         }
     </script>
 </body>
