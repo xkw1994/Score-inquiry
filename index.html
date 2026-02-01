@@ -71,7 +71,7 @@
         @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes fadeOut { to { opacity: 0; transform: translateY(20px); } }
 
-        /* --- ✨ 新增：底部弹幕输入栏 --- */
+        /* --- 底部弹幕输入栏 --- */
         .dm-bar {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 400px;
@@ -87,7 +87,7 @@
         .dm-input {
             flex: 1; border: none; background: transparent; outline: none;
             font-size: 14px; color: #555; text-align: left; padding: 0;
-            width: auto; /* 覆盖全局input样式 */
+            width: auto; 
         }
         
         .dm-btn {
@@ -97,16 +97,18 @@
         }
         .dm-btn:active { transform: scale(0.95); }
 
-        /* --- ✨ 弹幕动画 --- */
+        /* --- ✨ 修改后的弹幕动画 (左 -> 右) --- */
         .dm-item {
             position: fixed; white-space: nowrap; 
             font-weight: bold; font-size: 20px; 
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             pointer-events: none; z-index: 2000;
+            left: 0; /* 明确从左侧开始定位 */
             animation: fly linear forwards;
             font-family: "Microsoft YaHei", sans-serif;
         }
-        @keyframes fly { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+        /* 从屏幕左侧外(-100%) 飞向 屏幕右侧外(100vw) */
+        @keyframes fly { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
     </style>
 </head>
 <body>
@@ -209,26 +211,23 @@
             toggleRow = !toggleRow; 
         }
 
-        // --- 4. ✨ 实时弹幕逻辑 (发送与发射) ---
+        // --- 4. 实时弹幕逻辑 ---
         
-        // 发送弹幕 (点击按钮)
         async function sendDanmaku() {
             const input = document.getElementById('dmInput');
             const text = input.value.trim();
             if (!text) return;
-
-            // 广播给所有人 (包括自己)
             if (globalChannel) {
                 await globalChannel.send({
                     type: 'broadcast',
-                    event: 'danmaku', // ✨ 新事件类型
+                    event: 'danmaku',
                     payload: { text: text }
                 });
-                input.value = ''; // 清空输入框
+                input.value = ''; 
             }
         }
 
-        // 发射弹幕 (在屏幕上飞)
+        // ✨ 发射弹幕 (修改：左 -> 右，垂直居中附近，自动销毁)
         function shootDanmaku(text) {
             const el = document.createElement('div');
             el.innerText = text;
@@ -238,16 +237,18 @@
             const colors = ['#fff', '#ffeaa7', '#81ecec', '#fab1a0', '#a29bfe'];
             el.style.color = colors[Math.floor(Math.random() * colors.length)];
             
-            // 随机高度 (屏幕 10% - 70% 区域，避开底部输入栏)
-            el.style.top = Math.floor(Math.random() * 60 + 10) + '%';
+            // 随机高度: 集中在屏幕高度的 30% - 70% 之间
+            el.style.top = Math.floor(Math.random() * 40 + 30) + '%';
             
-            // 随机速度 (8s - 14s)
+            // 随机速度
             el.style.animationDuration = Math.floor(Math.random() * 6 + 8) + 's';
             
             document.body.appendChild(el);
             
-            // 动画结束后移除
-            setTimeout(() => { el.remove(); }, 14000);
+            // 监听动画结束事件，自动删除元素
+            el.addEventListener('animationend', () => {
+                el.remove();
+            });
         }
 
         // --- 5. 实时连接主逻辑 ---
@@ -269,7 +270,6 @@
                     showToast("🎉 " + name + " 已查询成绩");
                     if(score !== undefined) addToTicker(name, score);
                 })
-                // ✨ 监听弹幕事件
                 .on('broadcast', { event: 'danmaku' }, (payload) => {
                     shootDanmaku(payload.payload.text);
                 })
