@@ -23,29 +23,62 @@
             -webkit-tap-highlight-color: transparent; 
         }
         
-        /* --- 滚动战报栏 --- */
+        /* --- 滚动战报栏 (移动端修复重点) --- */
         .ticker-container {
             position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
-            width: 92%; max-width: 650px; height: 68px;
+            width: 94%; /* 手机端稍微宽一点 */
+            max-width: 650px; 
+            /* ✨ 修复1：增加高度，确保能容纳两行 */
+            height: 80px; 
             background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(12px);
             border-radius: 20px; box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.5); z-index: 100;
-            overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 6px;
+            overflow: hidden; 
+            display: flex; flex-direction: column; 
+            /* ✨ 修复2：均匀分布，防止挤在一起 */
+            justify-content: space-evenly; 
+            
             mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
             -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
             opacity: 0; transition: opacity 0.5s;
         }
         .ticker-active { opacity: 1; }
         
-        .ticker-row { display: flex; gap: 16px; width: max-content; align-items: center; will-change: transform; }
+        .ticker-row { 
+            display: flex; gap: 16px; 
+            width: max-content; 
+            align-items: center; 
+            will-change: transform; 
+            height: 30px; /* 固定行高，防止塌陷 */
+        }
 
-        /* 上行：左 -> 右 */
-        .row-top { transform: translateX(-100%); animation: moveLeftToRight 25s linear infinite; }
-        /* 下行：右 -> 左 */
-        .row-bottom { padding-left: 100%; animation: moveRightToLeft 30s linear infinite; }
+        /* ✨ 修复3：动画逻辑优化 */
+        /* 第一行：从左(屏幕外) -> 右(屏幕外) */
+        .row-top { 
+            /* 初始状态在左边屏幕外 */
+            transform: translateX(-100%); 
+            animation: scrollLeftToRight 25s linear infinite; 
+        }
+        
+        /* 第二行：从右(屏幕外) -> 左(屏幕外) */
+        .row-bottom { 
+            /* 初始状态在右边屏幕外 */
+            transform: translateX(100vw); 
+            animation: scrollRightToLeft 30s linear infinite; 
+        }
 
-        @keyframes moveLeftToRight { 0% { transform: translateX(-100%); } 100% { transform: translateX(100vw); } }
-        @keyframes moveRightToLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-200%); } }
+        /* 鼠标/手指按住暂停 */
+        .ticker-container:active .ticker-row { animation-play-state: paused; }
+
+        @keyframes scrollLeftToRight {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100vw); } /* 飞到视口右侧外 */
+        }
+
+        @keyframes scrollRightToLeft {
+            0% { transform: translateX(100vw); } /* 从视口右侧外开始 */
+            100% { transform: translateX(-100%); } /* 飞到左侧外 */
+        }
 
         /* 战报胶囊 */
         .t-pill { 
@@ -71,12 +104,12 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
             text-align: center; width: 320px; position: relative; z-index: 10; 
             border: 1px solid rgba(255, 255, 255, 0.6); 
-            margin-top: 60px; 
+            margin-top: 85px; /* ✨ 稍微下移，避开加高的顶部栏 */
         }
         h1 { color: #ff6b81; font-size: 24px; margin-bottom: 5px; letter-spacing: 1px; }
         p.subtitle { color: #a4b0be; font-size: 13px; margin-bottom: 18px; }
         
-        /* 状态栏 (优化1：绿点位置调整) */
+        /* 状态栏：绿点已修正 */
         .system-status { 
             display: flex; justify-content: center; align-items: center; 
             gap: 8px; font-size: 10px; color: #8395a7; 
@@ -84,14 +117,9 @@
             padding: 7px 12px; border-radius: 50px; 
             border: 1px solid #eeeff1; 
         }
-        .status-item { 
-            display: flex; align-items: center; /* 垂直居中 */
-            gap: 5px; /* 绿点和文字的间距 */
-            line-height: 1;
-        }
+        .status-item { display: flex; align-items: center; gap: 5px; line-height: 1; }
         .data-num { font-weight: 600; color: #2f3542; }
         
-        /* 绿点：移除偏移，完全靠 Flexbox 居中 */
         .live-dot { 
             width: 6px; height: 6px; 
             background-color: #2ecc71; border-radius: 50%; 
@@ -106,7 +134,7 @@
         input:focus { border-color: #ff9a9e; }
         
         .shake { animation: shake 0.4s ease-in-out; border-color: #ff6b81 !important; box-shadow: 0 0 8px rgba(255, 107, 129, 0.3); }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); } 20%, 40%, 60%, 80% { transform: translateX(5px); } }
+        @keyframes shake { 0% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); } 20%, 40%, 60%, 80% { transform: translateX(5px); } }
 
         button { width: 90%; margin-top: 10px; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); border: none; padding: 13px 0; border-radius: 50px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; transition: transform 0.2s; -webkit-appearance: none; }
         button:active { transform: scale(0.97); }
@@ -114,16 +142,15 @@
         /* 结果显示区 */
         .result-area { margin-top: 25px; padding: 20px; border-radius: 18px; display: none; line-height: 1.8; transition: all 0.5s; }
         .student-name { font-size: 19px; font-weight: bold; color: #2f3542; margin-bottom: 8px; }
-        
         .honor-title { font-size: 14px; font-weight: bold; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; gap: 5px; }
 
-        /* S/A/B/C 级样式 */
+        /* 卡片配色 */
         .rank-s { background: linear-gradient(135deg, #fffcf2 0%, #fff7d1 100%); border: 2px solid #ffd700; color: #854d0e; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); animation: jelly 0.6s forwards; }
         .rank-a { background: linear-gradient(135deg, #f0fff4 0%, #d1fae5 100%); border: 2px solid #10b981; color: #065f46; animation: jelly 0.6s forwards; }
         .rank-b { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #3b82f6; color: #1e40af; animation: jelly 0.6s forwards; }
         .rank-c { background: #f9fafb; border: 2px dashed #9ca3af; color: #4b5563; animation: jelly 0.6s forwards; }
-        
         @keyframes jelly { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
         .copyright { margin-top: 30px; font-size: 11px; color: #ff6b81; font-weight: 600; opacity: 0.8; }
         
         /* 通知 */
@@ -186,9 +213,9 @@
     </div>
 
     <script>
-        // 1. 核心数据库
+        // 1. 数据库
         const rawData = [
-            ["肖凯文", "1120", 93.5, 94, 94.5], ["陈凯文", "1120", 81, 79, 85], ["刘凯文", "1120", 61, 64, 64],
+            ["肖凯文", "1120", 93.5, 94, 94.5], ["陈凯文", "1120", 81, 79, 85], ["刘凯文", "1120", 71, 74, 74],
             ["彭凯文", "1120", 20, 30, 47.5], ["杨文操", "1208", 99.5, 96.5, 97.3], ["陈宇浩", "0623", 79.5, 88, 28],
             ["陈梓仪", "0920", 4, 7, 21.5], ["戴诗宸", "1124", 35.5, 17.5, 19.5], ["邓楚和", "0630", 32, 29, 22],
             ["邓恒", "0523", 84.3, 93.5, 98], ["邓苏嵘", "0401", 78.8, 93.5, 52], ["邓新乐", "1001", 13, 39.5, 19.5],
@@ -215,7 +242,7 @@
 
         document.getElementById('dataCount').innerText = db.length;
 
-        // 2. Supabase 初始化
+        // 2. Supabase
         const supabaseUrl = 'https://ijyctklfafrnerowwgii.supabase.co'; 
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeWN0a2xmYWZybmVyb3d3Z2lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4OTc4NjEsImV4cCI6MjA4NTQ3Mzg2MX0._hYKSgibEQyhmyexM9V3R2Z5A0GesRBRSCwX3Ed77C8'; 
         
@@ -228,7 +255,7 @@
             }
         } catch (e) { console.error(e); }
 
-        // 3. 战报逻辑
+        // 3. 动态战报逻辑
         const displayedNames = new Set();
         let toggleRow = true;
 
@@ -249,12 +276,13 @@
             item.className = `t-pill ${info.cls}`;
             item.innerHTML = `<div class="emoji-box">${info.icon}</div> ${name} 已查询`;
             
+            // 交替插入上下两行
             const trackId = toggleRow ? 'trackTop' : 'trackBottom';
             document.getElementById(trackId).appendChild(item);
             toggleRow = !toggleRow; 
         }
 
-        // 4. 实时逻辑
+        // 4. 实时弹幕
         async function sendDanmaku() {
             const input = document.getElementById('dmInput');
             const text = input.value.trim();
@@ -277,6 +305,7 @@
             el.addEventListener('animationend', () => { el.remove(); });
         }
 
+        // 5. 连接 & 状态同步
         async function initLiveCount() {
             if (!supabaseClient) return;
             let myId = localStorage.getItem('score_visitor_id') || ('user_' + Math.floor(Math.random() * 10000000));
@@ -291,7 +320,7 @@
                     const state = globalChannel.presenceState();
                     document.getElementById('onlineCount').innerText = Object.keys(state).length;
                     
-                    // ✨ 优化2：新用户进入时，读取所有在线人已有的查询记录，填入战报
+                    // 读取在线用户的历史查询，填入战报
                     Object.values(state).forEach(users => {
                         users.forEach(u => {
                             if (u.latest_check) {
@@ -309,10 +338,7 @@
                     shootDanmaku(payload.payload.text);
                 })
                 .subscribe(async (status) => {
-                    // 初始化连接时，先track一下基础信息
-                    if (status === 'SUBSCRIBED') {
-                        await globalChannel.track({ online_at: new Date().toISOString() });
-                    }
+                    if (status === 'SUBSCRIBED') await globalChannel.track({ online_at: new Date().toISOString() });
                 });
         }
 
@@ -359,9 +385,8 @@
             const scoreDiv = document.getElementById('scoreDisplay');
             const honorDiv = document.getElementById('honorDisplay');
             
-            resultDiv.className = "result-area"; 
-            resultDiv.style.display = "none";
-            honorDiv.innerHTML = ""; 
+            resultDiv.className = "result-area"; resultDiv.style.display = "none";
+            honorDiv.innerHTML = "";
 
             if (!name) { nameInput.classList.add('shake'); setTimeout(() => nameInput.classList.remove('shake'), 400); return; }
             if (!birth) { birthInput.classList.add('shake'); setTimeout(() => birthInput.classList.remove('shake'), 400); return; }
@@ -376,15 +401,13 @@
                         nameDiv.innerText = "🎉 " + studentByName.n + " 同学";
                         scoreDiv.innerHTML = studentByName.s;
 
-                        // 广播 + ✨ 核心优化：将本次查询结果更新到 Presence，让后来的人也能看见
                         if (globalChannel) {
-                            // 1. 发送瞬时广播
+                            // 广播
                             globalChannel.send({ 
                                 type: 'broadcast', event: 'check_success', 
                                 payload: { name: studentByName.n, score: studentByName.t } 
                             });
-                            
-                            // 2. 更新状态（持久化给后进入的用户看）
+                            // 记录到状态，给后来的用户看
                             globalChannel.track({
                                 online_at: new Date().toISOString(),
                                 latest_check: { name: studentByName.n, score: studentByName.t }
