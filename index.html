@@ -9,53 +9,97 @@
     
     <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
     <style>
-        /* CSS 样式保持不变 */
+        /* --- 基础布局 --- */
         body { background-image: linear-gradient(120deg, #fccb90 0%, #d57eeb 100%); height: 100vh; display: flex; justify-content: center; align-items: center; font-family: -apple-system, sans-serif; margin: 0; overflow: hidden; }
-        .card { background: rgba(255, 255, 255, 0.96); padding: 30px; border-radius: 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 320px; position: relative; z-index: 10; border: 1px solid rgba(255, 255, 255, 0.6); }
+        
+        /* --- ✨ 新增：顶部滚动战报栏 (高级感核心) --- */
+        .ticker-wrap {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 600px; height: 44px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            z-index: 100;
+            overflow: hidden;
+            display: flex; align-items: center;
+            border: 1px solid rgba(255,255,255,0.6);
+            /* 两侧淡入淡出遮罩 */
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+
+        .ticker-track {
+            display: flex; gap: 20px;
+            padding-left: 100%; /* 初始位置在最右侧 */
+            animation: scroll-left 35s linear infinite; /* 丝滑匀速滚动 */
+            white-space: nowrap;
+        }
+        
+        /* 鼠标放上去暂停，方便看名字 */
+        .ticker-wrap:hover .ticker-track { animation-play-state: paused; }
+
+        @keyframes scroll-left {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-200%); } /* 滚得远一点确保内容走完 */
+        }
+
+        /* 战报徽章样式 */
+        .t-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #555; font-weight: 500; }
+        .badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; color: #fff; transform: scale(0.9); }
+        
+        .b-s { background: linear-gradient(135deg, #ffd700, #fdb931); box-shadow: 0 2px 5px rgba(255, 215, 0, 0.4); text-shadow: 0 1px 0 rgba(0,0,0,0.1); }
+        .b-a { background: linear-gradient(135deg, #a18cd1, #fbc2eb); }
+        .b-b { background: linear-gradient(135deg, #8ec5fc, #e0c3fc); }
+        .b-c { background: #dcdde1; color: #7f8c8d; }
+
+        /* --- 主卡片 --- */
+        .card { background: rgba(255, 255, 255, 0.96); padding: 30px; border-radius: 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 320px; position: relative; z-index: 10; border: 1px solid rgba(255, 255, 255, 0.6); margin-top: 40px; /* 避开顶部栏 */ }
+        
         h1 { color: #ff6b81; font-size: 24px; margin-bottom: 5px; letter-spacing: 1px; }
         p.subtitle { color: #a4b0be; font-size: 13px; margin-bottom: 18px; }
+        
         .system-status { display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 10px; color: #8395a7; margin-bottom: 25px; background: #f8f9fa; padding: 7px 12px; border-radius: 50px; border: 1px solid #eeeff1; }
         .status-item { display: flex; align-items: center; gap: 4px; line-height: 1; }
         .data-num { font-weight: 600; color: #2f3542; }
         .live-dot { width: 6px; height: 6px; background-color: #2ecc71; border-radius: 50%; position: relative; top: 0.2px; box-shadow: 0 0 5px rgba(46, 204, 113, 0.6); animation: pulse 2.5s infinite; }
         @keyframes pulse { 0% { opacity: 0.4; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.4; transform: scale(0.9); } }
+        
         .input-group { margin-bottom: 15px; }
         input { width: 85%; padding: 13px; border: 1.5px solid #f1f2f6; border-radius: 14px; outline: none; font-size: 16px; text-align: center; transition: all 0.3s; }
         input:focus { border-color: #ff9a9e; }
         button { width: 90%; margin-top: 10px; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); border: none; padding: 13px 0; border-radius: 50px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; transition: transform 0.2s; }
         button:active { transform: scale(0.97); }
-        .result-area { margin-top: 25px; padding: 20px; border-radius: 18px; display: none; line-height: 1.8; }
+        
+        /* 结果卡片分级样式 */
+        .result-area { margin-top: 25px; padding: 20px; border-radius: 18px; display: none; line-height: 1.8; transition: all 0.5s; }
         .student-name { font-size: 19px; font-weight: bold; color: #2f3542; margin-bottom: 8px; }
-        .rank-s { background: #fff9db; border: 1.5px solid #fcc419; animation: jelly 0.6s forwards; }
-        .rank-c { background: #f8f9fa; border: 1.5px dashed #dee2e6; animation: jelly 0.6s forwards; }
+        
+        .rank-s { background: linear-gradient(135deg, #fff9db 0%, #fff0b3 100%); border: 2px solid #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); animation: jelly 0.6s forwards; }
+        .rank-a { background: linear-gradient(135deg, #f3e7e9 0%, #e3eeff 99%, #e3eeff 100%); border: 2px solid #a18cd1; animation: jelly 0.6s forwards; }
+        .rank-b { background: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%); border: 2px solid #8ec5fc; color: #fff; animation: jelly 0.6s forwards; }
+        .rank-c { background: #f8f9fa; border: 2px dashed #dee2e6; animation: jelly 0.6s forwards; }
+
         @keyframes jelly { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .copyright { margin-top: 30px; font-size: 11px; color: #ff6b81; font-weight: 600; opacity: 0.8; }
 
-        /* --- ✨ 新增：右上角通知气泡样式 --- */
-        #notification-container {
-            position: fixed; top: 20px; right: 20px; z-index: 999;
-            display: flex; flex-direction: column; gap: 10px; pointer-events: none;
-        }
-        .toast {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 10px 18px;
-            border-radius: 50px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            font-size: 12px; color: #555;
-            border-left: 4px solid #2ecc71;
-            display: flex; align-items: center; gap: 8px;
-            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), fadeOut 0.5s 3.5s forwards;
-            backdrop-filter: blur(5px);
-        }
+        /* 通知气泡 */
+        #notification-container { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: rgba(255, 255, 255, 0.95); padding: 10px 18px; border-radius: 50px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); font-size: 12px; color: #555; border-left: 4px solid #2ecc71; display: flex; align-items: center; gap: 8px; animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), fadeOut 0.5s 3.5s forwards; backdrop-filter: blur(5px); }
         @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes fadeOut { to { opacity: 0; transform: translateY(-20px); } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateY(20px); } }
     </style>
 </head>
 <body>
+    <div class="ticker-wrap">
+        <div class="ticker-track" id="tickerTrack">
+            <div class="t-item" style="color:#ff6b81; font-weight:bold;">🏆 实时战报：</div>
+        </div>
+    </div>
+
     <div id="notification-container"></div>
 
     <div class="card">
@@ -63,26 +107,15 @@
         <p class="subtitle">请输入姓名和生日召唤成绩单</p>
 
         <div class="system-status">
-            <div class="status-item">
-                <span>⬢ 数据库已同步 <span id="dataCount" class="data-num">0</span> 人</span>
-            </div>
+            <div class="status-item"><span>⬢ 数据库已同步 <span id="dataCount" class="data-num">0</span> 人</span></div>
             <div style="width:1px; height:10px; background:#e0e0e0;"></div>
-            <div class="status-item">
-                <span>访问 <span id="busuanzi_value_page_pv" class="data-num">...</span></span>
-            </div>
+            <div class="status-item"><span>访问 <span id="busuanzi_value_page_pv" class="data-num">...</span></span></div>
             <div style="width:1px; height:10px; background:#e0e0e0;"></div>
-            <div class="status-item">
-                <div class="live-dot"></div>
-                <span>在线 <span id="onlineCount" class="data-num">1</span></span>
-            </div>
+            <div class="status-item"><div class="live-dot"></div><span>在线 <span id="onlineCount" class="data-num">1</span></span></div>
         </div>
         
-        <div class="input-group">
-            <input type="text" id="nameInput" placeholder="输入姓名">
-        </div>
-        <div class="input-group">
-            <input type="tel" id="birthInput" placeholder="4位生日 (如: 0101)" maxlength="4">
-        </div>
+        <div class="input-group"><input type="text" id="nameInput" placeholder="输入姓名"></div>
+        <div class="input-group"><input type="tel" id="birthInput" placeholder="4位生日 (如: 0101)" maxlength="4"></div>
         
         <button id="searchBtn" onclick="checkGrade()">✨ 查询 ✨</button>
         
@@ -124,125 +157,142 @@
 
         document.getElementById('dataCount').innerText = db.length;
 
-        // --- 2. 初始化 Supabase ---
+        // --- 2. Supabase ---
         const supabaseUrl = 'https://ijyctklfafrnerowwgii.supabase.co'; 
-        
-        // ✅ Key 已保留你提供的正确版本
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeWN0a2xmYWZybmVyb3d3Z2lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4OTc4NjEsImV4cCI6MjA4NTQ3Mzg2MX0._hYKSgibEQyhmyexM9V3R2Z5A0GesRBRSCwX3Ed77C8'; 
         
         let supabaseClient;
-        let globalChannel = null; // 声明全局变量，供查询函数调用
+        let globalChannel = null;
 
         try {
             if (typeof supabase !== 'undefined' && supabase.createClient) {
                 supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-            } else {
-                console.error("Supabase 库未加载成功，请检查网络");
-                document.getElementById('onlineCount').innerText = "-";
             }
-        } catch (e) {
-            console.error("初始化失败:", e);
+        } catch (e) { console.error(e); }
+
+        // --- 3. 核心功能: 战报条辅助函数 ---
+        
+        // 1. 获取档次信息 (颜色和文字)
+        function getTierInfo(score) {
+            if (score >= 270) return { cls: 'b-s', txt: 'S级' };
+            if (score >= 240) return { cls: 'b-a', txt: 'A级' };
+            if (score >= 210) return { cls: 'b-b', txt: 'B级' };
+            return { cls: 'b-c', txt: 'C级' };
         }
 
-        // --- 3. 实时人数 + 广播逻辑 ---
+        // 2. 向滚动条添加一个新人
+        function addToTicker(name, score) {
+            const track = document.getElementById('tickerTrack');
+            const info = getTierInfo(score);
+            
+            // 创建元素: <div class="t-item"><span class="badge b-s">S级</span> 肖凯文</div>
+            const item = document.createElement('div');
+            item.className = 't-item';
+            item.innerHTML = `<span class="badge ${info.cls}">${info.txt}</span> ${name}`;
+            
+            track.appendChild(item);
+        }
+
+        // 3. 初始化: 自动填充高分榜 (让滚动条不空着)
+        function initTickerData() {
+            // 按分数排序，取前10名
+            const topStudents = [...db].sort((a, b) => b.t - a.t).slice(0, 10);
+            topStudents.forEach(s => addToTicker(s.n, s.t));
+        }
+
+        // --- 4. 实时逻辑 ---
         async function initLiveCount() {
+            initTickerData(); // 先填入假数据充场面
+
             if (!supabaseClient) return;
+            let myId = localStorage.getItem('score_visitor_id') || ('user_' + Math.floor(Math.random() * 10000000));
+            localStorage.setItem('score_visitor_id', myId);
 
-            let myId = localStorage.getItem('score_visitor_id');
-            if (!myId) {
-                myId = 'user_' + Math.floor(Math.random() * 10000000);
-                localStorage.setItem('score_visitor_id', myId);
-            }
-
-            // 初始化频道
             globalChannel = supabaseClient.channel('score_room', {
-                config: { presence: { key: myId } } 
+                config: { presence: { key: myId }, broadcast: { self: true } }
             });
 
             globalChannel
-                // 监听在线人数
                 .on('presence', { event: 'sync' }, () => {
-                    const state = globalChannel.presenceState();
-                    const count = Object.keys(state).length;
-                    console.log("在线人数更新:", count);
-                    document.getElementById('onlineCount').innerText = count;
+                    document.getElementById('onlineCount').innerText = Object.keys(globalChannel.presenceState()).length;
                 })
-                // ✨ 监听“查询成功”的广播消息
                 .on('broadcast', { event: 'check_success' }, (payload) => {
-                    // 收到消息后，弹窗显示
-                    showToast("🎉 " + payload.payload.name + " 已查询成绩");
+                    const { name, score } = payload.payload;
+                    showToast("🎉 " + name + " 已查询成绩");
+                    // ✨ 重点：收到广播后，把这个人加到滚动条最后！
+                    if(score !== undefined) addToTicker(name, score);
                 })
                 .subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') {
-                        await globalChannel.track({ 
-                            online_at: new Date().toISOString(),
-                            ua: navigator.userAgent
-                        });
-                    }
+                    if (status === 'SUBSCRIBED') await globalChannel.track({ online_at: new Date().toISOString() });
                 });
         }
 
-        // --- 4. 弹窗气泡函数 ---
         function showToast(text) {
             const container = document.getElementById('notification-container');
             const toast = document.createElement('div');
             toast.className = 'toast';
             toast.innerHTML = `<span>🔔</span> ${text}`;
             container.appendChild(toast);
-            
-            // 4秒后自动消失
-            setTimeout(() => {
-                toast.remove();
-            }, 4000);
+            setTimeout(() => { toast.remove(); }, 4000);
         }
 
-        // --- 5. 查询与动画逻辑 ---
-        function triggerFireworks() {
-            var duration = 5000; var end = Date.now() + duration;
+        // --- 5. 庆祝动画 ---
+        function animRankS() {
+            var duration = 3000; var end = Date.now() + duration;
             (function frame() {
-                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 } });
-                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 } });
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#ffd700', '#ff0000'] });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ffd700', '#ff0000'] });
                 if (Date.now() < end) requestAnimationFrame(frame);
             }());
         }
+        function animRankA() { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#a18cd1', '#fbc2eb'] }); }
+        function animRankB() {
+            var defaults = { spread: 360, ticks: 50, gravity: 0, decay: 0.94, startVelocity: 30, shapes: ['star'], colors: ['#FFE700', '#FF0000', '#2E3192', '#41BBC7'] };
+            function shoot() { confetti({ ...defaults, particleCount: 40, scalar: 1.2, shapes: ['star'] }); confetti({ ...defaults, particleCount: 10, scalar: 0.75, shapes: ['circle'] }); }
+            setTimeout(shoot, 0); setTimeout(shoot, 100); setTimeout(shoot, 200);
+        }
 
-        function checkGrade() {
+        // --- 6. 查询逻辑 ---
+        async function checkGrade() {
             const name = document.getElementById('nameInput').value.trim();
             const birth = document.getElementById('birthInput').value.trim();
             const resultDiv = document.getElementById('result');
             const nameDiv = document.getElementById('nameDisplay');
             const scoreDiv = document.getElementById('scoreDisplay');
             
+            resultDiv.className = "result-area"; resultDiv.style.display = "none";
+
             if (!name || !birth) return alert("请输入完整信息哦！");
 
             const student = db.find(s => s.n === name && s.b === birth);
-            resultDiv.style.display = "block";
-            resultDiv.className = "result-area"; 
+            
+            setTimeout(() => {
+                resultDiv.style.display = "block";
+                
+                if (student) {
+                    nameDiv.innerText = "🎉 " + student.n + " 同学";
+                    scoreDiv.innerHTML = student.s;
 
-            if (student) {
-                nameDiv.innerText = "🎉 " + student.n + " 同学";
-                scoreDiv.innerHTML = student.s;
+                    // ✨ 发送广播时，带上分数！
+                    if (globalChannel) {
+                        globalChannel.send({ 
+                            type: 'broadcast', 
+                            event: 'check_success', 
+                            payload: { name: student.n, score: student.t } 
+                        });
+                    }
 
-                // ✨ 发送广播：告诉全世界这个名字查到了
-                if (globalChannel) {
-                    globalChannel.send({
-                        type: 'broadcast',
-                        event: 'check_success',
-                        payload: { name: student.n }
-                    });
-                }
+                    if (student.t >= 270) { resultDiv.classList.add("rank-s"); animRankS(); }
+                    else if (student.t >= 240) { resultDiv.classList.add("rank-a"); animRankA(); }
+                    else if (student.t >= 210) { resultDiv.classList.add("rank-b"); animRankB(); }
+                    else { resultDiv.classList.add("rank-c"); }
 
-                if (student.t >= 270) {
-                    resultDiv.classList.add("rank-s");
-                    triggerFireworks();
                 } else {
+                    nameDiv.innerText = "🚫 未找到档案";
+                    scoreDiv.innerHTML = "请检查姓名或生日是否输入正确。";
                     resultDiv.classList.add("rank-c");
                 }
-            } else {
-                nameDiv.innerText = "🚫 未找到档案";
-                scoreDiv.innerHTML = "请检查姓名或生日是否输入正确。";
-                resultDiv.classList.add("rank-c");
-            }
+            }, 50);
         }
 
         window.onload = initLiveCount;
