@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
     <style>
-        /* CSS 样式保持不变，完美 */
+        /* CSS 样式保持不变 */
         body { background-image: linear-gradient(120deg, #fccb90 0%, #d57eeb 100%); height: 100vh; display: flex; justify-content: center; align-items: center; font-family: -apple-system, sans-serif; margin: 0; overflow: hidden; }
         .card { background: rgba(255, 255, 255, 0.96); padding: 30px; border-radius: 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 320px; position: relative; z-index: 10; border: 1px solid rgba(255, 255, 255, 0.6); }
         h1 { color: #ff6b81; font-size: 24px; margin-bottom: 5px; letter-spacing: 1px; }
@@ -34,9 +34,30 @@
         .rank-c { background: #f8f9fa; border: 1.5px dashed #dee2e6; animation: jelly 0.6s forwards; }
         @keyframes jelly { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .copyright { margin-top: 30px; font-size: 11px; color: #ff6b81; font-weight: 600; opacity: 0.8; }
+
+        /* --- ✨ 新增：右上角通知气泡样式 --- */
+        #notification-container {
+            position: fixed; top: 20px; right: 20px; z-index: 999;
+            display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+        }
+        .toast {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 18px;
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            font-size: 12px; color: #555;
+            border-left: 4px solid #2ecc71;
+            display: flex; align-items: center; gap: 8px;
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), fadeOut 0.5s 3.5s forwards;
+            backdrop-filter: blur(5px);
+        }
+        @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateY(-20px); } }
     </style>
 </head>
 <body>
+    <div id="notification-container"></div>
+
     <div class="card">
         <h1>🐰 期末成绩查询</h1>
         <p class="subtitle">请输入姓名和生日召唤成绩单</p>
@@ -106,12 +127,12 @@
         // --- 2. 初始化 Supabase ---
         const supabaseUrl = 'https://ijyctklfafrnerowwgii.supabase.co'; 
         
-        // 🚨🚨🚨 【在这里填入你的 ANON KEY】 🚨🚨🚨
-        // 必须是 eyJ 开头的那个很长的字符串
+        // ✅ Key 已保留你提供的正确版本
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqeWN0a2xmYWZybmVyb3d3Z2lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk4OTc4NjEsImV4cCI6MjA4NTQ3Mzg2MX0._hYKSgibEQyhmyexM9V3R2Z5A0GesRBRSCwX3Ed77C8'; 
         
-        // 修正：确保 supabase 对象存在
         let supabaseClient;
+        let globalChannel = null; // 声明全局变量，供查询函数调用
+
         try {
             if (typeof supabase !== 'undefined' && supabase.createClient) {
                 supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
@@ -123,31 +144,37 @@
             console.error("初始化失败:", e);
         }
 
-        // --- 3. 实时人数逻辑 (增强版) ---
+        // --- 3. 实时人数 + 广播逻辑 ---
         async function initLiveCount() {
             if (!supabaseClient) return;
 
-            // 修正：优先从 localStorage 获取ID，防止刷新导致人数虚高
             let myId = localStorage.getItem('score_visitor_id');
             if (!myId) {
                 myId = 'user_' + Math.floor(Math.random() * 10000000);
                 localStorage.setItem('score_visitor_id', myId);
             }
 
-            const channel = supabaseClient.channel('score_room', {
-                config: { presence: { key: myId } } // 使用唯一ID
+            // 初始化频道
+            globalChannel = supabaseClient.channel('score_room', {
+                config: { presence: { key: myId } } 
             });
 
-            channel
+            globalChannel
+                // 监听在线人数
                 .on('presence', { event: 'sync' }, () => {
-                    const state = channel.presenceState();
+                    const state = globalChannel.presenceState();
                     const count = Object.keys(state).length;
                     console.log("在线人数更新:", count);
                     document.getElementById('onlineCount').innerText = count;
                 })
+                // ✨ 监听“查询成功”的广播消息
+                .on('broadcast', { event: 'check_success' }, (payload) => {
+                    // 收到消息后，弹窗显示
+                    showToast("🎉 " + payload.payload.name + " 已查询成绩");
+                })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
-                        await channel.track({ 
+                        await globalChannel.track({ 
                             online_at: new Date().toISOString(),
                             ua: navigator.userAgent
                         });
@@ -155,7 +182,21 @@
                 });
         }
 
-        // --- 4. 查询与动画逻辑 ---
+        // --- 4. 弹窗气泡函数 ---
+        function showToast(text) {
+            const container = document.getElementById('notification-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<span>🔔</span> ${text}`;
+            container.appendChild(toast);
+            
+            // 4秒后自动消失
+            setTimeout(() => {
+                toast.remove();
+            }, 4000);
+        }
+
+        // --- 5. 查询与动画逻辑 ---
         function triggerFireworks() {
             var duration = 5000; var end = Date.now() + duration;
             (function frame() {
@@ -181,6 +222,16 @@
             if (student) {
                 nameDiv.innerText = "🎉 " + student.n + " 同学";
                 scoreDiv.innerHTML = student.s;
+
+                // ✨ 发送广播：告诉全世界这个名字查到了
+                if (globalChannel) {
+                    globalChannel.send({
+                        type: 'broadcast',
+                        event: 'check_success',
+                        payload: { name: student.n }
+                    });
+                }
+
                 if (student.t >= 270) {
                     resultDiv.classList.add("rank-s");
                     triggerFireworks();
