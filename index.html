@@ -58,7 +58,7 @@
         input { width: 85%; padding: 13px; border: 1.5px solid #f1f2f6; border-radius: 14px; outline: none; font-size: 16px; text-align: center; transition: all 0.3s; }
         input:focus { border-color: #ff9a9e; }
         
-        /* ✨ 新增：错误摇晃动画类 */
+        /* 错误摇晃动画类 */
         .shake { animation: shake 0.4s ease-in-out; border-color: #ff6b81 !important; box-shadow: 0 0 8px rgba(255, 107, 129, 0.3); }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -115,7 +115,6 @@
             pointer-events: none; z-index: 2000;
             left: 0; 
             animation: fly linear forwards;
-            /* ✨ 优化：使用更可爱的圆体字体栈 */
             font-family: "YouYuan", "幼圆", "Mini", "Comic Sans MS", "Chalkboard SE", sans-serif;
         }
         @keyframes fly { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
@@ -199,13 +198,14 @@
             }
         } catch (e) { console.error(e); }
 
-        // --- 3. 动态战报逻辑 ---
+        // --- 3. 动态战报逻辑 (已更新表情) ---
         const displayedNames = new Set();
         let toggleRow = true;
 
         function getTierInfo(score) {
+            // ✨ 1. 根据分数更新表情
             if (score >= 270) return { cls: 's-tier', icon: '🥳' }; 
-            if (score >= 240) return { cls: 'a-tier', icon: '🥹' }; 
+            if (score >= 240) return { cls: 'a-tier', icon: '😊' }; 
             if (score >= 210) return { cls: 'b-tier', icon: '😱' }; 
             return { cls: 'c-tier', icon: '😭' }; 
         }
@@ -217,14 +217,14 @@
             const info = getTierInfo(score);
             const item = document.createElement('div');
             item.className = `t-pill ${info.cls}`;
-            item.innerHTML = `<div class="emoji-box">${info.icon}</div> ${name} +${info.icon}`;
+            // ✨ 2. 更新文案格式：表情 + 姓名 + 已查询
+            item.innerHTML = `<div class="emoji-box">${info.icon}</div> ${name} 已查询`;
             const trackId = toggleRow ? 'trackTop' : 'trackBottom';
             document.getElementById(trackId).appendChild(item);
             toggleRow = !toggleRow; 
         }
 
         // --- 4. 实时弹幕逻辑 ---
-        
         async function sendDanmaku() {
             const input = document.getElementById('dmInput');
             const text = input.value.trim();
@@ -244,14 +244,10 @@
             el.innerText = text;
             el.className = 'dm-item';
             
-            // 随机颜色
             const colors = ['#fff', '#ffeaa7', '#81ecec', '#fab1a0', '#a29bfe'];
             el.style.color = colors[Math.floor(Math.random() * colors.length)];
             
-            // 随机高度 (30% - 70% 之间)
             el.style.top = Math.floor(Math.random() * 40 + 30) + '%';
-            
-            // 随机速度
             el.style.animationDuration = Math.floor(Math.random() * 6 + 8) + 's';
             
             document.body.appendChild(el);
@@ -297,7 +293,7 @@
             setTimeout(() => { toast.remove(); }, 4000);
         }
 
-        // --- 6. 动画与查询 ---
+        // --- 6. 动画与查询 (含验证优化) ---
         function animRankS() {
             var duration = 3000; var end = Date.now() + duration;
             (function frame() {
@@ -324,36 +320,33 @@
             const nameDiv = document.getElementById('nameDisplay');
             const scoreDiv = document.getElementById('scoreDisplay');
             
-            // 重置状态
             resultDiv.className = "result-area"; 
             resultDiv.style.display = "none";
 
-            // ✨ 1. 检查姓名是否为空
+            // ✨ 验证1：检查姓名是否为空 (为空摇晃)
             if (!name) {
                 nameInput.classList.add('shake');
-                setTimeout(() => nameInput.classList.remove('shake'), 400); // 移除类以便下次能再次触发
+                setTimeout(() => nameInput.classList.remove('shake'), 400); 
                 return;
             }
 
-            // ✨ 2. 检查生日是否为空
+            // ✨ 验证2：检查生日是否为空 (为空摇晃)
             if (!birth) {
                 birthInput.classList.add('shake');
                 setTimeout(() => birthInput.classList.remove('shake'), 400);
                 return;
             }
 
-            // 模拟查询延迟
+            // 模拟网络延迟
             setTimeout(() => {
                 resultDiv.style.display = "block";
                 
-                // ✨ 3. 逻辑判断优化
-                // 第一步：先看名字对不对
+                // ✨ 验证3：分步检查
                 const studentByName = db.find(s => s.n === name);
 
                 if (studentByName) {
-                    // 第二步：名字对了，检查生日
                     if (studentByName.b === birth) {
-                        // --- 成功逻辑 ---
+                        // 成功
                         nameDiv.innerText = "🎉 " + studentByName.n + " 同学";
                         scoreDiv.innerHTML = studentByName.s;
 
@@ -371,13 +364,13 @@
                         else { resultDiv.classList.add("rank-c"); }
 
                     } else {
-                        // --- 名字存在，但生日错误 ---
+                        // 姓名对，生日错
                         nameDiv.innerText = "🔒 验证失败";
                         scoreDiv.innerHTML = "姓名正确，但生日输入错误。<br>请核对后重试 (例如: 0101)。";
                         resultDiv.classList.add("rank-c");
                     }
                 } else {
-                    // --- 名字完全不存在 ---
+                    // 姓名错
                     nameDiv.innerText = "🚫 查无此人";
                     scoreDiv.innerHTML = "数据库中没有找到该姓名。<br>请检查是否有错别字。";
                     resultDiv.classList.add("rank-c");
