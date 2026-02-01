@@ -53,9 +53,19 @@
         .data-num { font-weight: 600; color: #2f3542; }
         .live-dot { width: 6px; height: 6px; background-color: #2ecc71; border-radius: 50%; position: relative; top: 0.2px; box-shadow: 0 0 5px rgba(46, 204, 113, 0.6); animation: pulse 2.5s infinite; }
         @keyframes pulse { 0% { opacity: 0.4; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.4; transform: scale(0.9); } }
+        
         .input-group { margin-bottom: 15px; }
         input { width: 85%; padding: 13px; border: 1.5px solid #f1f2f6; border-radius: 14px; outline: none; font-size: 16px; text-align: center; transition: all 0.3s; }
         input:focus { border-color: #ff9a9e; }
+        
+        /* ✨ 新增：错误摇晃动画类 */
+        .shake { animation: shake 0.4s ease-in-out; border-color: #ff6b81 !important; box-shadow: 0 0 8px rgba(255, 107, 129, 0.3); }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
         button { width: 90%; margin-top: 10px; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); border: none; padding: 13px 0; border-radius: 50px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; transition: transform 0.2s; }
         button:active { transform: scale(0.97); }
         .result-area { margin-top: 25px; padding: 20px; border-radius: 18px; display: none; line-height: 1.8; transition: all 0.5s; }
@@ -97,17 +107,17 @@
         }
         .dm-btn:active { transform: scale(0.95); }
 
-        /* --- ✨ 修改后的弹幕动画 (左 -> 右) --- */
+        /* --- 弹幕动画 & 字体优化 --- */
         .dm-item {
             position: fixed; white-space: nowrap; 
             font-weight: bold; font-size: 20px; 
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             pointer-events: none; z-index: 2000;
-            left: 0; /* 明确从左侧开始定位 */
+            left: 0; 
             animation: fly linear forwards;
-            font-family: "Microsoft YaHei", sans-serif;
+            /* ✨ 优化：使用更可爱的圆体字体栈 */
+            font-family: "YouYuan", "幼圆", "Mini", "Comic Sans MS", "Chalkboard SE", sans-serif;
         }
-        /* 从屏幕左侧外(-100%) 飞向 屏幕右侧外(100vw) */
         @keyframes fly { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
     </style>
 </head>
@@ -129,8 +139,10 @@
             <div style="width:1px; height:10px; background:#e0e0e0;"></div>
             <div class="status-item"><div class="live-dot"></div><span>在线 <span id="onlineCount" class="data-num">1</span></span></div>
         </div>
+        
         <div class="input-group"><input type="text" id="nameInput" placeholder="输入姓名"></div>
         <div class="input-group"><input type="tel" id="birthInput" placeholder="4位生日 (如: 0101)" maxlength="4"></div>
+        
         <button id="searchBtn" onclick="checkGrade()">✨ 查询 ✨</button>
         <div id="result" class="result-area">
             <div id="nameDisplay" class="student-name"></div>
@@ -227,7 +239,6 @@
             }
         }
 
-        // ✨ 发射弹幕 (修改：左 -> 右，垂直居中附近，自动销毁)
         function shootDanmaku(text) {
             const el = document.createElement('div');
             el.innerText = text;
@@ -237,7 +248,7 @@
             const colors = ['#fff', '#ffeaa7', '#81ecec', '#fab1a0', '#a29bfe'];
             el.style.color = colors[Math.floor(Math.random() * colors.length)];
             
-            // 随机高度: 集中在屏幕高度的 30% - 70% 之间
+            // 随机高度 (30% - 70% 之间)
             el.style.top = Math.floor(Math.random() * 40 + 30) + '%';
             
             // 随机速度
@@ -245,7 +256,6 @@
             
             document.body.appendChild(el);
             
-            // 监听动画结束事件，自动删除元素
             el.addEventListener('animationend', () => {
                 el.remove();
             });
@@ -304,41 +314,72 @@
         }
 
         async function checkGrade() {
-            const name = document.getElementById('nameInput').value.trim();
-            const birth = document.getElementById('birthInput').value.trim();
+            const nameInput = document.getElementById('nameInput');
+            const birthInput = document.getElementById('birthInput');
+            
+            const name = nameInput.value.trim();
+            const birth = birthInput.value.trim();
+            
             const resultDiv = document.getElementById('result');
             const nameDiv = document.getElementById('nameDisplay');
             const scoreDiv = document.getElementById('scoreDisplay');
             
-            resultDiv.className = "result-area"; resultDiv.style.display = "none";
+            // 重置状态
+            resultDiv.className = "result-area"; 
+            resultDiv.style.display = "none";
 
-            if (!name || !birth) return alert("请输入完整信息哦！");
+            // ✨ 1. 检查姓名是否为空
+            if (!name) {
+                nameInput.classList.add('shake');
+                setTimeout(() => nameInput.classList.remove('shake'), 400); // 移除类以便下次能再次触发
+                return;
+            }
 
-            const student = db.find(s => s.n === name && s.b === birth);
-            
+            // ✨ 2. 检查生日是否为空
+            if (!birth) {
+                birthInput.classList.add('shake');
+                setTimeout(() => birthInput.classList.remove('shake'), 400);
+                return;
+            }
+
+            // 模拟查询延迟
             setTimeout(() => {
                 resultDiv.style.display = "block";
                 
-                if (student) {
-                    nameDiv.innerText = "🎉 " + student.n + " 同学";
-                    scoreDiv.innerHTML = student.s;
+                // ✨ 3. 逻辑判断优化
+                // 第一步：先看名字对不对
+                const studentByName = db.find(s => s.n === name);
 
-                    if (globalChannel) {
-                        globalChannel.send({ 
-                            type: 'broadcast', 
-                            event: 'check_success', 
-                            payload: { name: student.n, score: student.t } 
-                        });
+                if (studentByName) {
+                    // 第二步：名字对了，检查生日
+                    if (studentByName.b === birth) {
+                        // --- 成功逻辑 ---
+                        nameDiv.innerText = "🎉 " + studentByName.n + " 同学";
+                        scoreDiv.innerHTML = studentByName.s;
+
+                        if (globalChannel) {
+                            globalChannel.send({ 
+                                type: 'broadcast', 
+                                event: 'check_success', 
+                                payload: { name: studentByName.n, score: studentByName.t } 
+                            });
+                        }
+
+                        if (studentByName.t >= 270) { resultDiv.classList.add("rank-s"); animRankS(); }
+                        else if (studentByName.t >= 240) { resultDiv.classList.add("rank-a"); animRankA(); }
+                        else if (studentByName.t >= 210) { resultDiv.classList.add("rank-b"); animRankB(); }
+                        else { resultDiv.classList.add("rank-c"); }
+
+                    } else {
+                        // --- 名字存在，但生日错误 ---
+                        nameDiv.innerText = "🔒 验证失败";
+                        scoreDiv.innerHTML = "姓名正确，但生日输入错误。<br>请核对后重试 (例如: 0101)。";
+                        resultDiv.classList.add("rank-c");
                     }
-
-                    if (student.t >= 270) { resultDiv.classList.add("rank-s"); animRankS(); }
-                    else if (student.t >= 240) { resultDiv.classList.add("rank-a"); animRankA(); }
-                    else if (student.t >= 210) { resultDiv.classList.add("rank-b"); animRankB(); }
-                    else { resultDiv.classList.add("rank-c"); }
-
                 } else {
-                    nameDiv.innerText = "🚫 未找到档案";
-                    scoreDiv.innerHTML = "请检查姓名或生日是否输入正确。";
+                    // --- 名字完全不存在 ---
+                    nameDiv.innerText = "🚫 查无此人";
+                    scoreDiv.innerHTML = "数据库中没有找到该姓名。<br>请检查是否有错别字。";
                     resultDiv.classList.add("rank-c");
                 }
             }, 50);
