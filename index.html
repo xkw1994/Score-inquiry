@@ -268,11 +268,18 @@
         }
 
         function addToTicker(name, score) {
-            // 允许重复显示(如果是不同时间的查询)，或者你可以保留 Set 逻辑去重
-            // 这里为了让战报看起来热闹，暂时去掉了 Set 限制，或者你可以加上
-            // if (displayedNames.has(name)) return; 
-            // displayedNames.add(name);
+           // ===========================================
+            // 【修复 Bug】 开启去重功能
+            // ===========================================
+            
+            // 1. 如果这个名字已经在墙上了，直接结束，不重复添加
+            if (displayedNames.has(name)) return; 
+            
+            // 2. 如果没在墙上，先登记名字，再往下执行
+            displayedNames.add(name);
 
+            // ===========================================
+            
             document.getElementById('tickerContainer').classList.add('ticker-active');
             const info = getTierInfo(score);
             const item = document.createElement('div');
@@ -281,7 +288,7 @@
             
             const trackId = toggleRow ? 'trackTop' : 'trackBottom';
             document.getElementById(trackId).appendChild(item);
-            toggleRow = !toggleRow; 
+            toggleRow = !toggleRow;
         }
 
         function playEffectByScore(score) {
