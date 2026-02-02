@@ -143,17 +143,70 @@
         .copyright { position: absolute; bottom: 25px; left: 0; width: 100%; font-size: 11px; color: #ff6b81; font-weight: 600; opacity: 0.8; }
 
         /* 弹幕输入条 */
-        .dm-bar { 
-            position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); 
-            width: 88%; max-width: 350px; 
-            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); 
-            padding: 8px 8px 8px 15px; border-radius: 50px; 
-            display: flex; align-items: center; gap: 10px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+        /* ==================== 
+           灵动胶囊弹幕栏样式 
+           ==================== */
+           .dm-bar { 
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); 
+            /* 默认状态：小胶囊 */
+            width: 140px; height: 44px; 
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(15px); 
+            border-radius: 50px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15); 
             z-index: 999; 
+            overflow: hidden; 
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* 弹性动画 */
+            border: 1px solid rgba(255,255,255,0.8);
         }
-        .dm-input { flex: 1; border: none; background: transparent; outline: none; }
-        .dm-btn { width: auto; margin: 0; padding: 8px 18px; font-size: 13px; background: #2ecc71; border-radius: 30px; }
+
+        /* 激活状态：变宽 */
+        .dm-bar.active { 
+            width: 90%; max-width: 400px; 
+        }
+
+        /* 状态 A: 触发按钮 */
+        .dm-trigger { 
+            width: 100%; height: 100%; 
+            display: flex; justify-content: center; align-items: center; 
+            font-size: 14px; font-weight: bold; color: #555; 
+            cursor: pointer; gap: 5px;
+            transition: opacity 0.2s;
+        }
+        .dm-bar.active .dm-trigger { 
+            opacity: 0; pointer-events: none; position: absolute; /* 展开时隐藏 */
+        }
+
+        /* 状态 B: 输入内容区 */
+        .dm-content { 
+            width: 100%; height: 100%; 
+            display: flex; align-items: center; padding: 0 5px 0 15px; 
+            opacity: 0; pointer-events: none; 
+            transition: opacity 0.3s 0.1s; /* 稍微延迟一点显示，等宽度变宽 */
+        }
+        .dm-bar.active .dm-content { 
+            opacity: 1; pointer-events: auto; 
+        }
+
+        .dm-input { 
+            flex: 1; border: none; background: transparent; outline: none; 
+            font-size: 15px; color: #333; 
+        }
+
+        .dm-btn { 
+            width: 36px !important; height: 36px; padding: 0; margin: 0 5px; 
+            border-radius: 50%; display: flex; justify-content: center; align-items: center; 
+            font-size: 18px; 
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); 
+            box-shadow: 0 4px 10px rgba(255, 107, 129, 0.3);
+        }
+        
+        .dm-close {
+            width: 24px; height: 24px; color: #aaa; font-size: 14px; 
+            display: flex; justify-content: center; align-items: center; 
+            cursor: pointer; margin-right: 5px; border-radius: 50%;
+            background: #f1f2f6;
+        }
         
         /* 飘动的弹幕 */
         .dm-item { 
@@ -217,9 +270,16 @@
         <div class="copyright">&copy; 2026 Designed by Kevin</div>
     </div>
 
-    <div class="dm-bar">
-        <input type="text" id="dmInput" class="dm-input" placeholder="写下你的下学期目标..." maxlength="10" enterkeyhint="send" onkeypress="if(event.keyCode==13) sendDanmaku()">
-        <button id="dmBtn" class="dm-btn" onclick="sendDanmaku()">发送</button>
+    <div class="dm-bar" id="dmBar">
+        <div class="dm-trigger" onclick="toggleDmBar()">
+            <span>💬 发射弹幕</span>
+        </div>
+
+        <div class="dm-content">
+            <input type="text" id="dmInput" class="dm-input" placeholder="✨ 写下你的魔法..." maxlength="10" enterkeyhint="send">
+            <button id="dmBtn" class="dm-btn" onclick="sendDanmaku()">🚀</button>
+            <div class="dm-close" onclick="toggleDmBar()">✕</div>
+        </div>
     </div>
 
     <script>
@@ -257,6 +317,16 @@
             const randomText = btnTexts[Math.floor(Math.random() * btnTexts.length)];
             const btn = document.getElementById('dmBtn');
             if(btn) btn.innerText = randomText;
+
+            // 【新增】点击屏幕空白处，自动收起弹幕栏
+    document.addEventListener('click', function(e) {
+        const bar = document.getElementById('dmBar');
+        // 如果点击的不是弹幕栏本身，也不是弹幕栏里面的东西
+        if (!bar.contains(e.target)) {
+            bar.classList.remove('active');
+            document.getElementById('dmInput').blur();
+        }
+    });
         };
 
         // ==========================================
@@ -508,6 +578,8 @@
             if (globalChannel) { 
                 await globalChannel.send({ type: 'broadcast', event: 'danmaku', payload: { text: text } }); 
                 input.value = ''; 
+                // ✨【新增】发送成功后，自动收起胶囊，深藏功与名
+                toggleDmBar();
             }
         }
 
@@ -655,6 +727,22 @@
             toast.innerHTML = `<span>🔔</span> ${text}`; container.appendChild(toast);
             setTimeout(() => { toast.remove(); }, 1200);
         }
+        // 切换弹幕栏状态 (展开/收起)
+function toggleDmBar() {
+    const bar = document.getElementById('dmBar');
+    const input = document.getElementById('dmInput');
+
+    // 切换 class
+    bar.classList.toggle('active');
+
+    if (bar.classList.contains('active')) {
+        // 如果是展开，自动聚焦输入框
+        setTimeout(() => input.focus(), 300);
+    } else {
+        // 如果是收起，强制收起键盘
+        input.blur();
+    }
+}
          //凯文老师结构优化笔记
    /* 为了让你更清楚我做了什么调整，这里是几个关键点：
     
