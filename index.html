@@ -137,25 +137,46 @@
             loadHistory();   // 加载历史战报
         };
 
-        // --- 功能A: 加载历史战报 (从 query_logs 表) ---
+        // ==========================================
+        // 【优化版】加载历史记录
+        // 只有在真正有数据上墙时，才显示滚动条
+        // ==========================================
         async function loadHistory() {
             if (!supabaseClient) return;
 
-            // 获取最近50条记录
+            // 1. 去数据库查最近 50 条
             const { data, error } = await supabaseClient
                 .from('query_logs')
-                .select('student_name, score') // 同时获取名字和分数
+                .select('student_name, score') 
                 .order('created_at', { ascending: false })
                 .limit(50);
 
-            if (error) { console.error('加载历史失败:', error); return; }
-
-            if (data && data.length > 0) {
-                document.getElementById('tickerContainer').classList.add('ticker-active');
-                data.reverse().forEach(row => {
-                    addToTicker(row.student_name, row.score);
-                });
+            if (error) {
+                console.error('哎呀，读取历史记录失败:', error); 
+                return;
             }
+
+            // 2. 如果查到了数据
+            if (data && data.length > 0) {
+                // 用于记录是否有“有效”的新数据上墙
+                let hasValidData = false;
+
+                // 反转数组，让旧的先上墙
+                data.reverse().forEach(row => {
+                    // 我们手动调用去重检查
+                    if (!displayedNames.has(row.student_name)) {
+                        addToTicker(row.student_name, row.score);
+                        hasValidData = true; // 标记：确实有人上墙了
+                    }
+                });
+
+                // 3. 只有当确实有新名字上墙时，才把滚动条显示出来
+                // (避免数据库里有数据，但全是重复的，导致空滚动条出现)
+                if (hasValidData) {
+                    document.getElementById('tickerContainer').classList.add('ticker-active');
+                }
+            }
+            // 如果 data 为空，什么都不做，滚动条保持隐藏 (opacity: 0)
         }
 
         // --- 功能B: 记录本次查询 (写入 query_logs 表) ---
