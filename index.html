@@ -144,37 +144,61 @@
 
         /* 弹幕输入条 */
         /* ==================== 
-           灵动胶囊弹幕栏样式 
+           灵动胶囊样式 (半透明磨砂版) 
            ==================== */
            .dm-bar { 
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); 
+            
             /* 默认状态：小胶囊 */
             width: 140px; height: 44px; 
-            background: rgba(255, 255, 255, 0.9); 
-            backdrop-filter: blur(15px); 
+            
+            /* 👇 关键修改：透明度从 0.9 改为 0.4，让它变透 */
+            background: rgba(255, 255, 255, 0.4); 
+            
+            /* 👇 关键修改：增加模糊度，实现“磨砂玻璃”效果 */
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px); /* 兼容苹果手机 */
+            
             border-radius: 50px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15); 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1); 
             z-index: 999; 
             overflow: hidden; 
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* 弹性动画 */
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); 
+            
+            /* 边框也调淡一点，更精致 */
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+
+        /* 激活状态：变宽 + 变实 */
+        .dm-bar.active { 
+            width: 90%; max-width: 400px; 
+            
+            /* 👇 关键点：展开输入时，背景变回不透明，保证看清文字 */
+            background: rgba(255, 255, 255, 0.95); 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2); /* 展开时阴影加深 */
             border: 1px solid rgba(255,255,255,0.8);
         }
 
-        /* 激活状态：变宽 */
-        .dm-bar.active { 
-            width: 90%; max-width: 400px; 
-        }
-
-        /* 状态 A: 触发按钮 */
-        .dm-trigger { 
+       /* 状态 A: 触发按钮 (平时半透明) */
+       .dm-trigger { 
             width: 100%; height: 100%; 
             display: flex; justify-content: center; align-items: center; 
-            font-size: 14px; font-weight: bold; color: #555; 
+            font-size: 14px; font-weight: bold; 
+            color: #333; /* 字体颜色稍微深一点点，防止透明后太淡看不清 */
             cursor: pointer; gap: 5px;
+            
+            /* 👇 关键修改：默认透明度设为 0.5，让文字和图标也半透明 */
+            opacity: 0.5; 
+            
             transition: opacity 0.2s;
         }
+        /* ✨ 交互细节：手指按住或鼠标悬停时，文字变实，给个反馈 */
+        .dm-trigger:active, .dm-trigger:hover {
+            opacity: 0.9;
+        }
+        /* 展开时隐藏 (这一段保持不变，必须有！) */
         .dm-bar.active .dm-trigger { 
-            opacity: 0; pointer-events: none; position: absolute; /* 展开时隐藏 */
+            opacity: 0; pointer-events: none; position: absolute; 
         }
 
         /* 状态 B: 输入内容区 */
