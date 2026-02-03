@@ -370,7 +370,68 @@
     color: #fff; font-size: 30px; cursor: pointer; opacity: 0.7;
 }
 
+/* ==================== 
+   ✨ 升级版：魔法战报按钮样式 
+   ==================== */
+   .btn-share {
+    /* 1. 强制居中布局 */
+    display: flex !important;       /* 开启弹性盒子，确保内部文字图标居中 */
+    justify-content: center;
+    align-items: center;
+    margin: 25px auto 0 auto !important; /* 上距25px，左右自动(居中)，下距0 */
+    
+    /* 2. 尺寸优化：比查询按钮窄一点，显得更高级 */
+    width: 72% !important;          /* 覆盖全局button的90%宽度 */
+    padding: 12px 0;                /* 高度适中 */
+    
+    /* 3. 颜值升级：极光紫渐变 (区别于查询按钮的粉色) */
+    background: linear-gradient(135deg, #E0C3FC 0%, #8EC5FC 100%);
+    
+    /* 4. 细节质感 */
+    color: #5e54d8;                 /*字体用深紫色，对比度高，看起来很高级 */
+    font-size: 15px;
+    font-weight: 700;
+    border: 2px solid rgba(255, 255, 255, 0.6); /* 半透明白边框，增加玻璃感 */
+    border-radius: 50px;
+    
+    /* 5. 投影：柔和的紫色光晕 */
+    box-shadow: 0 10px 25px rgba(142, 197, 252, 0.45); 
+    
+    /* 6. 动画过渡 */
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    cursor: pointer;
+    text-shadow: none; /* 去掉文字投影，保持干净 */
+}
 
+/* 悬停/点击时的动态反馈 */
+.btn-share:hover {
+    transform: translateY(-2px); /* 微微上浮 */
+    box-shadow: 0 15px 30px rgba(142, 197, 252, 0.6);
+}
+
+.btn-share:active {
+    transform: scale(0.96) translateY(0); /* 按下时缩小 */
+    box-shadow: 0 5px 15px rgba(142, 197, 252, 0.4);
+}
+
+/* 如果你想加个闪光的动画效果（可选） */
+.btn-share {
+    position: relative;
+    overflow: hidden;
+}
+.btn-share::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+    animation: shine 3s infinite;
+}
+@keyframes shine {
+    0% { left: -100%; }
+    20% { left: 100%; }
+    100% { left: 100%; }
+}
     </style>
 </head>
 
@@ -415,7 +476,9 @@
                 <canvas id="scoreChart"></canvas>
             </div>
             <div id="honorDisplay"></div>
-            <button id="shareBtn" class="btn-share" onclick="generateShareImage()" style="display: none;">📸 生成魔法战报</button>
+            <button id="shareBtn" class="btn-share" onclick="generateShareImage()" style="display: none;">
+                <span>📸 生成魔法纪念卡</span>
+            </button>
         </div>
         
         <div class="copyright">&copy; 2026 Designed by Kevin</div>
@@ -525,6 +588,9 @@
             resultDiv.style.display = "none";
             document.getElementById('honorDisplay').innerHTML = "";
             if(chartBox) chartBox.style.display = "none"; // 默认隐藏图表
+            // 👇👇👇【请添加这一行】👇👇👇
+    // 每次查询前，先把分享按钮藏起来，防止查分失败时它还显示着
+              document.getElementById('shareBtn').style.display = "none";
             
             // --- Step 1: 基础校验 (空值检查) ---
             if (!name) { shakeInput(nameInput); return; }
@@ -1025,54 +1091,59 @@ function toggleDmBar() {
     const qrZone = document.getElementById('qr-code-zone');
     qrZone.innerHTML = ""; // 先清空，防止重复生成
 
-    // 创建二维码
     new QRCode(qrZone, {
-        text: "https://kevinn.pages.dev/", // 你的目标网址
-        width: 64,  // 宽度 (根据 .qr-box 的 70px 微调)
-        height: 64, // 高度
-        colorDark : "#333333", // 二维码颜色
-        colorLight : "#f0f2f5", // 背景色 (与 .qr-box 背景一致)
+        text: window.location.href, // 自动获取当前网址，或者写死 "https://kevinn.pages.dev/"
+        width: 64,  
+        height: 64, 
+        colorDark : "#333333", 
+        colorLight : "#f0f2f5", 
         correctLevel : QRCode.CorrectLevel.H
     });
 
-    // 稍微调整一下生成的 img 样式，让它居中
-    // QRCode库会生成 img 或 canvas，我们强制让它垂直居中
     setTimeout(() => {
         const qrImg = qrZone.querySelector('img');
         if(qrImg) qrImg.style.borderRadius = "4px"; 
     }, 0);
-    // ==========================================
 
-    // 3. 显示 Loading 状态
-    const btn = document.querySelector('.btn-share');
-    const originalText = btn.innerText;
-    btn.innerText = '⌛️ 生成中...';
+    // ==========================================
+    // 3. 显示 Loading 状态 (👇 关键修复在这里)
+    // ==========================================
+    
+    // 👇 漏掉的就是这一行！必须先找到按钮，命名为 btn
+    const btn = document.getElementById('shareBtn'); 
+    
+    const originalText = btn.innerText; // 现在这行代码认识 btn 是谁了
+    btn.innerHTML = '<span>⌛️ 正在绘制...</span>';
     btn.disabled = true;
 
     // 4. 调用 html2canvas 截图
-    // 注意：因为二维码生成是同步的，但 DOM 渲染可能微慢，
-    // 我们用一个小小的 setTimeout 确保二维码渲染完毕后再截图
     setTimeout(() => {
         const template = document.getElementById('share-poster-template');
         
         html2canvas(template, {
             useCORS: true,
             scale: 2,
-            backgroundColor: null
+            backgroundColor: null // 保持透明背景
         }).then(canvas => {
             const finalImgUrl = canvas.toDataURL('image/png');
             document.getElementById('final-share-img').src = finalImgUrl;
             document.getElementById('share-modal').classList.add('show');
             
-            btn.innerText = originalText;
+            // 还原按钮状态
+            btn.innerHTML = originalText; // 这里的 innerHTML 更好，保留原本的结构
             btn.disabled = false;
         }).catch(err => {
             console.error(err);
-            showToast("生成失败，请重试");
-            btn.innerText = originalText;
+            // 这里为了防止 toast 报错，如果你没定义 showToast 可以直接 alert
+            if(typeof showToast === 'function') {
+                showToast("生成失败，请重试");
+            } else {
+                alert("生成失败，请重试");
+            }
+            btn.innerHTML = originalText;
             btn.disabled = false;
         });
-    }, 100); // 延时 100ms 截图，确保二维码已显示
+    }, 100); 
 }
 
         function closeShareModal() {
