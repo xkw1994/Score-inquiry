@@ -12,6 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
         /* ==================== 
@@ -291,6 +292,83 @@
         .toast { background: rgba(255, 255, 255, 0.95); padding: 10px 18px; border-radius: 50px; border-left: 4px solid #2ecc71; animation: slideIn 0.4s, fadeOut 0.5s 3.5s forwards; }
         @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
         @keyframes fadeOut { to { opacity: 0; transform: translateY(20px); } }
+
+        /* ==================== 
+   新增：分享海报与弹窗样式 
+   ==================== */
+
+/* 1. 分享按钮 (加在原来的查询结果按钮下面) */
+.btn-share {
+    background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+    box-shadow: 0 4px 15px rgba(161, 140, 209, 0.4);
+    margin-top: 15px;
+}
+
+/* 2. 海报模板 (平时隐藏，生成时才用到) */
+#share-poster-template {
+    position: fixed;
+    top: 0; left: -9999px; /* 移出屏幕外，不让用户看到 */
+    width: 375px; /* 固定宽度，保证生成图片比例一致 */
+    background-image: linear-gradient(120deg, #fccb90 0%, #d57eeb 100%);
+    padding: 30px 20px;
+    box-sizing: border-box;
+    font-family: sans-serif;
+    z-index: -1;
+    text-align: center;
+    border-radius: 0; /* 图片不需要圆角 */
+}
+
+/* 海报内部容器 (白卡片) */
+.poster-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 30px 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* 海报上的元素 */
+.poster-title { font-size: 22px; color: #ff8fa3; font-weight: bold; margin-bottom: 5px; letter-spacing: 2px; }
+.poster-name { font-size: 24px; font-weight: 800; color: #333; margin: 15px 0 5px 0; }
+.poster-score { font-size: 48px; font-weight: 900; color: #ff9a9e; margin: 5px 0; font-family: 'Arial', sans-serif; }
+.poster-score span { font-size: 16px; color: #666; font-weight: normal; }
+.poster-chart-img { width: 90%; margin: 10px auto; display: block; }
+.poster-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 2px dashed #eee; }
+
+/* 二维码区域 */
+.qr-box {
+    width: 70px; height: 70px;
+    background: #f0f2f5;
+    border-radius: 8px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    font-size: 10px; color: #999;
+}
+.qr-box img { width: 100%; height: 100%; border-radius: 8px; } /* 如果你有真实二维码图片 */
+
+.poster-info { text-align: left; font-size: 12px; color: #888; line-height: 1.5; }
+.poster-copy { font-size: 10px; color: #aaa; margin-top: 4px; }
+
+/* 3. 生成结果弹窗 (Modal) */
+.share-modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 10000;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    backdrop-filter: blur(5px);
+}
+.share-modal.show { opacity: 1; pointer-events: auto; }
+.share-modal img {
+    max-width: 85%; max-height: 75vh;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.2);
+}
+.share-tips { color: #fff; margin-top: 15px; font-size: 14px; letter-spacing: 1px; opacity: 0.8; }
+.close-modal {
+    position: absolute; top: 30px; right: 30px;
+    color: #fff; font-size: 30px; cursor: pointer; opacity: 0.7;
+}
     </style>
 </head>
 
@@ -335,9 +413,37 @@
                 <canvas id="scoreChart"></canvas>
             </div>
             <div id="honorDisplay"></div>
+            <button class="btn-share" onclick="generateShareImage()">📸 生成魔法战报</button>
         </div>
         
         <div class="copyright">&copy; 2026 Designed by Kevin</div>
+    </div>
+
+    <div id="share-poster-template">
+        <div class="poster-card">
+            <div class="poster-title">✨ 魔法学期·结业式</div>
+            
+            <div class="poster-name" id="p-name">凯文同学</div>
+            <div class="poster-score" id="p-score">285<span>分</span></div>
+            
+            <img id="p-chart-img" class="poster-chart-img" src="" />
+            
+            <div class="poster-footer">
+                <div class="poster-info">
+                    <div>📅 日期: <span id="p-date">2026.02.03</span></div>
+                    <div>🎓 评级: <span id="p-rank">S级 (传说)</span></div>
+                    <div class="poster-copy">© Designed by Kevin</div>
+                </div>
+                
+                <div class="qr-box" id="qr-code-zone"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="share-modal" class="share-modal" onclick="closeShareModal()">
+        <div class="close-modal">×</div>
+        <img id="final-share-img" src="" alt="长按保存">
+        <div class="share-tips">✨ 长按图片保存到相册 ✨</div>
     </div>
 
     <div class="dm-bar" id="dmBar">
@@ -863,34 +969,95 @@ function toggleDmBar() {
         input.blur();
     }
 }
-         //凯文老师结构优化笔记
-   /* 为了让你更清楚我做了什么调整，这里是几个关键点：
+// ==========================================
+        // 8. 生成图片分享功能
+        // ==========================================
+
+        function generateShareImage() {
+    // 1. 获取当前数据
+    const name = document.getElementById('nameDisplay').innerText.replace('🎉 ', '').replace(' 同学', '');
+    const scoreHtml = document.getElementById('scoreDisplay').innerHTML;
+    const scoreMatch = scoreHtml.match(/总分：(\d+)/);
+    const score = scoreMatch ? scoreMatch[1] : '???';
     
-    分层管理：
-    
-    我把 JS 代码分成了 7 个区块（见注释）。
-    
-    配置区 -> 生命周期 -> 核心业务 -> 数据层 -> 交互层 -> UI层 -> 通讯层。
-    
-    这样以后你想改“弹幕逻辑”，直接找第 5 区块；想改“图表”，直接找第 6 区块，不用满屏找代码。
-    
-    抽离通用函数：
-    
-    把 shakeInput(el) 独立出来了。以前你在 checkGrade 里写了 4 次 classList.add('shake')...，现在只需要写一行，代码更干净。
-    
-    把 handleSuccess 独立出来了。checkGrade 函数太长了，把它拆分一下，逻辑更清晰。
-    
-    安全性与健壮性：
-    
-    补全了 playSound 函数的定义（之前你代码里调用了但没定义，会报错）。
-    
-    在 drawRadarChart 和 showError 里都加了 scoreChartInstance.destroy()，这是防止图表闪烁、重叠的关键。
-    
-    注释风格：
-    
-    所有的关键步骤都加了 // Step 1、// 情况A 这样的注释，方便你顺着逻辑读代码。
-    
-    这就是一个标准的、结构良好的单页应用（SPA）雏形了！继续加油！*/
+    // 2. 填充模板数据
+    document.getElementById('p-name').innerText = name;
+    document.getElementById('p-score').innerHTML = score + '<span>分</span>';
+    const today = new Date();
+    document.getElementById('p-date').innerText = `${today.getFullYear()}.${today.getMonth()+1}.${today.getDate()}`;
+
+    // 计算评级文字
+    const numScore = parseInt(score);
+    let rankText = 'C级 (厚积薄发)';
+    if(numScore >= 270) rankText = 'S级 (传说魔法师)';
+    else if(numScore >= 240) rankText = 'A级 (卓越魔法师)';
+    else if(numScore >= 210) rankText = 'B级 (进阶魔法师)';
+    document.getElementById('p-rank').innerText = rankText;
+
+    // Chart图表转图片
+    const canvas = document.getElementById('scoreChart');
+    const dataURL = canvas.toDataURL('image/png');
+    document.getElementById('p-chart-img').src = dataURL;
+
+    // ==========================================
+    // ✨ 新增：生成二维码逻辑
+    // ==========================================
+    const qrZone = document.getElementById('qr-code-zone');
+    qrZone.innerHTML = ""; // 先清空，防止重复生成
+
+    // 创建二维码
+    new QRCode(qrZone, {
+        text: "https://kevinn.pages.dev/", // 你的目标网址
+        width: 64,  // 宽度 (根据 .qr-box 的 70px 微调)
+        height: 64, // 高度
+        colorDark : "#333333", // 二维码颜色
+        colorLight : "#f0f2f5", // 背景色 (与 .qr-box 背景一致)
+        correctLevel : QRCode.CorrectLevel.H
+    });
+
+    // 稍微调整一下生成的 img 样式，让它居中
+    // QRCode库会生成 img 或 canvas，我们强制让它垂直居中
+    setTimeout(() => {
+        const qrImg = qrZone.querySelector('img');
+        if(qrImg) qrImg.style.borderRadius = "4px"; 
+    }, 0);
+    // ==========================================
+
+    // 3. 显示 Loading 状态
+    const btn = document.querySelector('.btn-share');
+    const originalText = btn.innerText;
+    btn.innerText = '⌛️ 生成中...';
+    btn.disabled = true;
+
+    // 4. 调用 html2canvas 截图
+    // 注意：因为二维码生成是同步的，但 DOM 渲染可能微慢，
+    // 我们用一个小小的 setTimeout 确保二维码渲染完毕后再截图
+    setTimeout(() => {
+        const template = document.getElementById('share-poster-template');
+        
+        html2canvas(template, {
+            useCORS: true,
+            scale: 2,
+            backgroundColor: null
+        }).then(canvas => {
+            const finalImgUrl = canvas.toDataURL('image/png');
+            document.getElementById('final-share-img').src = finalImgUrl;
+            document.getElementById('share-modal').classList.add('show');
+            
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }).catch(err => {
+            console.error(err);
+            showToast("生成失败，请重试");
+            btn.innerText = originalText;
+            btn.disabled = false;
+        });
+    }, 100); // 延时 100ms 截图，确保二维码已显示
+}
+
+        function closeShareModal() {
+            document.getElementById('share-modal').classList.remove('show');
+        }
     </script>
 </body>
 </html>
