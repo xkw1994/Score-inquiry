@@ -615,58 +615,71 @@
        // ----------------------------------------------------
         // 【修改版】绘制雷达图 (接收 color 参数)
         // ----------------------------------------------------
-        function drawRadarChart(data, color) {
-            const ctx = document.getElementById('scoreChart');
-            
-            if (scoreChartInstance) {
-                scoreChartInstance.destroy();
+       // ----------------------------------------------------
+function drawRadarChart(data, color) {
+    const ctx = document.getElementById('scoreChart');
+    
+    // 如果旧图表存在，先销毁
+    if (scoreChartInstance) {
+        scoreChartInstance.destroy();
+    }
+    
+    if (typeof Chart !== 'undefined') {
+        scoreChartInstance = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                // 👇 关键修改在这里：使用数组嵌套 [['第一行', '第二行'], ...] 实现换行效果
+                labels: [
+                    ['语文', data.chinese + '分'], 
+                    ['数学', data.math + '分'], 
+                    ['英语', data.english + '分']
+                ],
+                datasets: [{
+                    label: '能力值',
+                    data: [data.chinese, data.math, data.english],
+                    
+                    // 背景颜色：带透明度
+                    backgroundColor: color + '66', 
+                    
+                    // 边框和点颜色
+                    borderColor: color,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: color,
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: color,
+                    
+                    borderWidth: 2,
+                    pointRadius: 4 // 把点稍微调大一点，更好看
+                }]
+            },
+            options: {
+                layout: { padding: 10 },
+                scales: { 
+                    r: { 
+                        beginAtZero: true, 
+                        max: 100, // 建议设为 100 或 120，固定比例更直观
+                        ticks: { display: false }, // 隐藏内部刻度数字，保持画面干净
+                        
+                        // 👇 调整顶点文字样式
+                        pointLabels: { 
+                            font: { size: 13, weight: 'bold', family: 'sans-serif' }, 
+                            color: '#555',
+                            // 稍微增加一点文字到图形的距离
+                            padding: 10
+                        } 
+                    } 
+                },
+                plugins: { legend: { display: false } }
             }
-            
-            if (typeof Chart !== 'undefined') {
-                scoreChartInstance = new Chart(ctx, {
-                    type: 'radar',
-                    data: {
-                        labels: ['语文', '数学', '英语'],
-                        datasets: [{
-                            label: '能力值',
-                            data: [data.chinese, data.math, data.english],
-                            
-                            // ✨ 应用动态颜色
-                            // 给颜色代码后面加 '66' (16进制)，让它变成半透明背景
-                            // 例如: #ffd700 -> #ffd70066
-                            backgroundColor: color + '66', 
-                            
-                            // 边框和点用纯色
-                            borderColor: color,
-                            pointBackgroundColor: '#fff',
-                            pointBorderColor: color,
-                            
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        layout: { padding: 10 },
-                        scales: { 
-                            r: { 
-                                beginAtZero: true, 
-                                max: 100, 
-                                ticks: { display: false }, 
-                                // 让角落的文字颜色也稍微深一点
-                                pointLabels: { font: { size: 14, weight: 'bold' }, color: '#555' } 
-                            } 
-                        },
-                        plugins: { legend: { display: false } }
-                    }
-                });
-            }
-        }
+        });
+    }
+}
 
         // ==========================================
         // 4. 数据加载与日志 (历史记录/弹幕)
         // ==========================================
 
         
-
         // 加载最近弹幕
         async function loadRecentDanmaku() {
             if (!supabaseClient) return;
